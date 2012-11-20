@@ -6,8 +6,8 @@ Created on Nov 15, 2012
 
 CONST_WATER='W'
 CONST_GREEN='g'
-CONST_TRAMPOLINE='t'
-CONST_TURQUOISE='u'
+CONST_TRAMPOLINE='j'
+CONST_TURQUOISE='t'
 CONST_STONE='s'
 CONST_NORTH=1
 CONST_SOUTH=2
@@ -16,7 +16,7 @@ CONST_SOUTHWEST=4
 CONST_NORTHEAST=5
 CONST_SOUTHEAST=6
 
-import sys
+import sys;
 
 def encodeVar(x,y,t,size):
     return y + size[1]*x + size[0]*size[1]*t + 1;
@@ -32,12 +32,21 @@ def decodeVar(value,size):
 
 def isAccessible(element):
     return element != None and element != CONST_WATER
+    
+def isGreen(element):
+    return str(element).lower()==CONST_GREEN
 
 def isDestroyable(element):
-    return str(element).lower() == CONST_GREEN
+    return isGreen(element) or isTurquoise(element)
 
 def isTrampoline(element):
     return str(element).lower() == CONST_TRAMPOLINE
+    
+def isHigh(element):
+    return element == CONST_STONE.upper()
+
+def isTurquoise(element):
+    return str(element).lower() == CONST_TURQUOISE
 
 def getElem(elem,field,size):
     if(elem[0] < 0 or elem[0] >= size[0] or elem[1] < 0 or elem[1] >= size[1]):
@@ -80,6 +89,36 @@ def getRelElem(elem,direction,distance,field,size):
         distance -= 1
                 
     return getElem(pos,field,size),pos
+    
+def findElem(elem, field, size):
+    result = [];
+    
+    for x in range(size[0]):
+        for y in range(size[1]):
+            if(field[x][y] == elem):
+                result.append((x, y));
+                
+    return result;
+    
+def findSmallElem(elem, field, size):
+    return findElem(elem.lower(), field, size)
+    
+def findBigElem(elem, field, size):
+    return findElem(elem.upper(), field, size)
+    
+def destroy(elem):
+    result = CONST_WATER
+    if(isGreen(elem)):
+        result = CONST_WATER
+    elif(isTurquoise(elem)):
+        result = CONST_GREEN
+        
+    if(elem.islower()):
+        result= result.lower()
+    else:
+        result = result.upper()
+        
+    return result;
 
 def readMap(filename):
     file = open(filename);
@@ -119,6 +158,8 @@ def readMap(filename):
                     newLine.append(firstLine[i]);
                 elif(i < len(line)):
                     newLine.append(line[i]);
+                else:
+                    newLine.append(CONST_WATER)
             
             if(len(newLine) >maxColumns):
                 maxColumns = len(newLine)

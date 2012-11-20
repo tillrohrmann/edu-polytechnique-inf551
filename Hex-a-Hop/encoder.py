@@ -20,9 +20,9 @@ def getStateClauses(field,size,timeSteps):
             for y in range(size[1]):
                 if(isAccessible(field[x][y])):
                     clause.append(encodeVar(x,y,t,size));
-        
+
         result.append(clause);
-        
+
         #but he cannot be at two positions at the same time
         for x in range(size[0]):
             for y in range(size[1]):
@@ -30,30 +30,32 @@ def getStateClauses(field,size,timeSteps):
                     for j in range(y+1,size[1]):
                         if(isAccessible(field[x][j])):
                             result.append([-encodeVar(x,y,t,size),-encodeVar(x,j,t,size)]);
-                            
+
                     for i in range(x+1,size[0]):
                         for j in range(size[1]):
                             if(isAccessible(field[i][j])):
                                 result.append([-encodeVar(x,y,t,size),-encodeVar(i,j,t,size)]);
-        
+
     return result;
 
 def getAccessibleNeighbours(position,field,size):
     result = [];
-        
+
     directions = [CONST_NORTH,CONST_SOUTH,CONST_NORTHWEST,CONST_SOUTHWEST,CONST_NORTHEAST,CONST_SOUTHEAST];
-    
+
     for direction in directions:
         distance =1
         (elem,_) =getRelElem(position,direction,distance,field,size)
-        while(isTrampoline(elem)):
+        (elem2, _) =getRelElem(position, direction, distance+1, field, size)
+        while(isTrampoline(elem) and not isHigh(elem2)):
             distance +=2
             (elem,_) =getRelElem(position,direction,distance,field,size)
+            (elem2, _) = getRelElem(position, direction+1, distance, field, size)
         (_,pos) = getRelElem(position,direction,distance,field,size);
-        
-        if(isAccessible(getElem(pos,field,size))):
+
+        if(isAccessible(getElem(pos,field,size)) and not isHigh(elem2)):
             result.append(pos)
- 
+
     return result;
 
 def getMovementClauses(field,size,timesteps):
@@ -61,25 +63,65 @@ def getMovementClauses(field,size,timesteps):
     for t in range(timesteps):
         for x in range(size[0]):
             for y in range(size[1]):
-                neighbours = getAccessibleNeighbours((x,y),field,size);
-                clause = [-encodeVar(x,y,t,size)];
-                
-                for neighbour in neighbours:
-                    clause.append(encodeVar(neighbour[0],neighbour[1],t+1,size));
-                    
-                result.append(clause);
+                if(isAccessible(getElem((x, y), field, size))):
+                    neighbours = getAccessibleNeighbours((x,y),field,size);
+                    clause = [-encodeVar(x,y,t,size)];
+
+                    for neighbour in neighbours:
+                        clause.append(encodeVar(neighbour[0],neighbour[1],t+1,size));
+
+                    result.append(clause);
     return result
+    
+def getSmallBigClauses(small, big, size, timesteps):
+    result =[]
+    for elem in big:
+        for t in range(2, timesteps):
+            for smallElem in small:
+                clause = [-encodeVar(elem[0], elem[1], t, size)];
+                for u in range(t-1):
+                    clause.append(encodeVar(smallElem[0], smallElem[1], u, size))
+                result.append(clause);
+                
+    return result;
 
 def getBehavioralClauses(field, size, timesteps):
     result = []
     for x in range(size[0]):
         for y in range(size[1]):
             #a destroyable (green) field cannot be accessed twice
-            if(isDestroyable(field[x][y])):
+            if(isGreen(field[x][y])):
                 for t in range(timesteps-1):
                     for u in range(t+1,timesteps):
                         result.append([-encodeVar(x,y,t,size),-encodeVar(x,y,u,size)])
-                    
+            
+            if(isTurquoise(getElem((x,y),field,size))):
+                #if once visited it has to be visited a second time
+                for t in range(timesteps):
+                    clause = [-encodeVar(x,y,t,size)];
+                    for u in range(timesteps):
+                        if(u != t):
+                            clause.append(encodeVar(x,y,u,size));
+                    result.append(clause);
+                
+                #turquoise fields can at most be accessed twice
+                for t in range(timesteps-1):
+                    for u in range(t+1, timesteps):
+                        for v in range(u+1, timesteps+1):
+                            result.append([-encodeVar(x, y, t, size), -encodeVar(x, y, u, size), -encodeVar(x, y, v, size)])
+                            
+    #model that high stones sink down if all flat stones of the same kind have been destroyed
+    smallGreens = findSmallElem(CONST_GREEN, field, size);
+    bigGreens = findBigElem(CONST_GREEN, field, size);
+    
+    smallTurq = findSmallElem(CONST_TURQUOISE, field, size);
+    bigTurq = findBigElem(CONST_TURQUOISE, field, size);
+    
+    clauses = getSmallBigClauses(smallGreens, bigGreens, size, timesteps);
+    result += clauses;
+    clauses = getSmallBigClauses(smallTurq, bigTurq, size, timesteps);
+    result += clauses;
+               
     return result;
 
 def getStartClauses(field, size,start):
@@ -92,23 +134,23 @@ def getEndClauses(field,size,timesteps):
     #the player has to be on a non-destroyable field at the last timestep
     for x in range(size[0]):
         for y in range(size[1]):
-            if(isAccessible(field[x][y]) and not isDestroyable(field[x][y])):
+            if(isAccessible(field[x][y]) and not isGreen(field[x][y])):
                 clause.append(encodeVar(x, y, timesteps, size));
-                
+
     result.append(clause);
-    
+
     #all green tiles have to be destroyed
     for x in range(size[0]):
         for y in range(size[1]):
-            if(isDestroyable(field[x][y])):
+            if(isGreen(field[x][y])):
                 clause = [];
                 for t in range(timesteps):
                     clause.append(encodeVar(x,y,t,size));
-                    
+
                 result.append(clause);
     return result;
-    
-    
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
@@ -128,4 +170,5 @@ if __name__ == '__main__':
         startClauses= getStartClauses(field,size,start);
         endClauses = getEndClauses(field,size,timeSteps)
         clauses = stateClauses + movementClauses + behavioralClauses + startClauses + endClauses;
+        
         printFormulas(clauses)

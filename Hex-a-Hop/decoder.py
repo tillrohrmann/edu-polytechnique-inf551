@@ -61,9 +61,9 @@ def printHistory(field,size,playerPositions):
             print(" ".join(firstLine));
             print(" ".join(secondLine));
             
-            if(common.isDestroyable(common.getElem(position, field, size))):
-                field[position[0]][position[1]]=common.CONST_WATER
-            
+            if(x == position[0] and common.isDestroyable(common.getElem(position, field, size))):
+                field[position[0]][position[1]]=common.destroy(common.getElem(position, field, size))
+                
         input()
 
 if __name__ == '__main__':
