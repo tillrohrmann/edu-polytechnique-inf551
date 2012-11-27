@@ -53,7 +53,7 @@ def getAccessibleNeighbours(position,field,size):
             (elem2, _) = getRelElem(position, direction+1, distance, field, size)
         (_,pos) = getRelElem(position,direction,distance,field,size);
 
-        if(isAccessible(getElem(pos,field,size)) and not isHigh(elem2)):
+        if(isAccessible(getElem(pos,field,size)) and not isHigh(getElem(pos,field,size))):
             result.append(pos)
 
     return result;
