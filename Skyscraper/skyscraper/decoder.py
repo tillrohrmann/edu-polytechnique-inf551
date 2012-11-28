@@ -41,7 +41,8 @@ if __name__ == '__main__':
         exit(1)
     else:
         size,constraints = common.readFile(sys.argv[1])
-        variables = common.readResultFile(sys.argv[2])        
+        variables = common.readResultFile(sys.argv[2])  
         positives = [x for x in variables if x >0];
+        positives = positives[0:size**2]
         printResult(size,constraints,positives)
         
