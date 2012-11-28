@@ -1,8 +1,9 @@
 #!/bin/bash
 
-MINISAT='../../minisat/simp/minisat'
+SAT='../../minisat/simp/minisat'
+SAT='../../glucose/glucose_2.1/glucose_static'
 
 skyscraper/encoder.py $1 > temp.dimacs
-${MINISAT} temp.dimacs temp2.dimacs > /dev/null
+${SAT} temp.dimacs temp2.dimacs > /dev/null
 skyscraper/decoder.py $1 temp2.dimacs 
-rm temp.dimacs temp2.dimacs
+#rm temp.dimacs temp2.dimacs
