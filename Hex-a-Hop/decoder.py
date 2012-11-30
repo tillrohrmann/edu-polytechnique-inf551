@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 '''
 Created on Nov 15, 2012
 
@@ -64,7 +64,7 @@ def printHistory(field,size,playerPositions):
             if(x == position[0] and common.isDestroyable(common.getElem(position, field, size))):
                 field[position[0]][position[1]]=common.destroy(common.getElem(position, field, size))
                 
-        input()
+        raw_input()
 
 if __name__ == '__main__':
     if(len(sys.argv) < 3):
