@@ -16,11 +16,38 @@ CONST_SOUTHWEST=4
 CONST_NORTHEAST=5
 CONST_SOUTHEAST=6
 
+counter = 0;
+#highMapping = {};
+
 import sys;
+
+def getMaxMovementVariables(size, timesteps):
+    return size[1]-1 + size[1]*(size[0]-1) + size[0]*size[1]*timesteps + 2
 
 def encodeVar(x,y,t,size):
     return y + size[1]*x + size[0]*size[1]*t + 1;
     
+def encodeState(x, y, t, size, timesteps):
+    #global counter
+   # global highMapping
+    nombreMovementVariables = getMaxMovementVariables(size, timesteps)
+    
+    return y + size[1]*x + size[0]*size[1]*t + 1 + nombreMovementVariables;
+    
+   # if((x, y, t) in highMapping):
+    #    return highMapping[(x, y, t)]
+   # else:
+    #    highMapping[(x, y, t)] = counter + nombreMovementVariables;
+    #    counter += 1;
+     #   return counter + nombreMovementVariables-1;
+        
+def helperVariable(size, timesteps):
+    global counter
+    nombreMovementVariables = 2*getMaxMovementVariables(size, timesteps)
+    counter += 1
+    
+    return nombreMovementVariables + counter -1
+
 def decodeVar(value,size):
     value -= 1;
     y = value % size[1];
@@ -44,6 +71,9 @@ def isTrampoline(element):
     
 def isHigh(element):
     return element == CONST_STONE.upper()
+    
+def isHighMoveable(element):
+    return element == element.upper();
 
 def isTurquoise(element):
     return str(element).lower() == CONST_TURQUOISE

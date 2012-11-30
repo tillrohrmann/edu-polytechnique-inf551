@@ -68,12 +68,15 @@ def printHistory(field,size,playerPositions):
 
 if __name__ == '__main__':
     if(len(sys.argv) < 3):
-        print("Usage: <map file> <result file>")
+        print("Usage: <map file> <result file> <steps>")
         exit(1)
     else:
         (size,field,pos) = common.readMap(sys.argv[1]);
         model = common.readResultFile(sys.argv[2]);
         model = [x for x in model if x > 0];
+        steps = int(sys.argv[3]);
+        
+        model = model[0:steps+1];
         
         playerPositions = calcPositions(model,size);
         
