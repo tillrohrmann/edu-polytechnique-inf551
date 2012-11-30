@@ -27,6 +27,8 @@ let read_constraints_from_file file_name =
                                           "Bad file structure : %s." s)
     | End_of_file -> failwith "Bad file structure : end-of-file encountered \
                                before it should have been the case."
+    | Sys_error e -> failwith (Printf.sprintf "Error while opening file : %s."
+                                              e)
 ;;
 
 (**

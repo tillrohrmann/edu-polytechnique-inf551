@@ -27,7 +27,8 @@ let write_formula_to_file (formula, nb_variables) file_name =
     write_formula_to_file_aux formula file;
     close_out file
   with
-      Sys_error e -> prerr_endline e
+      Sys_error e -> failwith (Printf.sprintf "Error while opening file : %s."
+                                              e)
 ;;
 
 (**
@@ -65,5 +66,6 @@ let read_solution_from_file file_name =
         raise UNSAT
       end
   with
-      Sys_error e -> prerr_endline e
+      Sys_error e -> failwith (Printf.sprintf "Error while opening file : %s."
+                                              e)
 ;;
