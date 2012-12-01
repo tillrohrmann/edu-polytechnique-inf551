@@ -3,6 +3,14 @@ let const_green = 'g';;
 let const_trampoline = 'j';;
 let const_turquoise = 't';;
 let const_stone = 's';;
+
+(** The number of different tiles types. *)
+let nb_types = 2;;
+(** The type number of green. *)
+let green_type = 1;;
+(** The type number of turquoise. *)
+let turquoise_type = 2;;
+
 let const_north = 1;;
 let const_south = 2;;
 let const_northwest = 3;;
@@ -11,14 +19,42 @@ let const_northeast = 5;;
 let const_southeast = 6;;
 
 let counter = ref 0;;
+
+(** Stores the maximum value of a used (encoded variable). *)
 let maxVar = ref 0;;
 
 let getMaxMovementVariables size timesteps =
   size.(1) - 1 + size.(1) * (size.(0) - 1) + size.(0) * size.(1) * timesteps + 2
 ;;
 
+(**
+ * Generate a variable indicating that the player is at a given position at a
+ * given timestep.
+ *
+ * @param x The abscissa of the position.
+ * @param y The ordinate of the position.
+ * @param t The timestep.
+ * @param size The size of the map.
+ * @return The value of the encoded variable.
+ *)
 let encodeVar x y t size =
   let var = y + size.(1) * x + size.(0) * size.(1) * t + 1 in
+  if var > !maxVar then maxVar := var;
+  var
+;;
+
+(**
+ * Generate a variable indicating if all the low tiles of a given type have been
+ * destroyed, and therefore all the high tiles have sunk down.
+ * 
+ * @param tileType The type of the tile.
+ * @param t The timestep.
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The value of the encoded variable.
+ *)
+let encodeTypeHeightVar tileType t size timesteps =
+  let var = size.(0) * size.(1) * (timesteps + 1) + tileType + t * nb_types in
   if var > !maxVar then maxVar := var;
   var
 ;;
@@ -34,6 +70,14 @@ let helperVariable size timesteps =
   numberMovementVariables + !counter - 1
 ;;
 
+(**
+ * Decode a position and timestep variable.
+ *
+ * @param value The value of the variable.
+ * @param size The size of the field (one-dimensional array).
+ * @return A triplet giving the abscissa, the ordinate and the timestep
+ * represented corresponding to this variable.
+ *)
 let decodeVar value size =
   let v = ref (value - 1) in
   let y = !v mod size.(1) in
@@ -44,38 +88,97 @@ let decodeVar value size =
   (x,y,t)
 ;;
 
+(**
+ * Check if a given element is accessible.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is accessible or not.
+ *)
 let isAccessible element =
   match element with
       None -> false
     | Some e -> e <> const_water;;
     
+(**
+ * Check if a given element is green.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is green or not.
+ *)
 let isGreen element =
   match element with
       None -> false
     | Some e -> Char.lowercase e = const_green;;
 
+(**
+ * Check if a given element is turquoise.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is turquoise or not.
+ *)
 let isTurquoise element = 
   match element with
       None -> false
     | Some e -> Char.lowercase e = const_turquoise;;
 
+(**
+ * Check if a given element is destroyable.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is destroyable or not.
+ *)
 let isDestroyable element = isGreen element || isTurquoise element;;
 
+(**
+ * Check if a given element is a trampoline.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is a trampoline or not.
+ *)
 let isTrampoline element = 
   match element with
       None -> false
     | Some e -> Char.lowercase e = const_trampoline;;
     
+(**
+ * Check if a given element is high.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is high or not.
+ *)
 let isHigh element = 
   match element with
       None -> false
     | Some e -> e = Char.uppercase const_stone;;
     
+(**
+ * Check if a given element is high and moveable.
+ *
+ * @param element An option giving, if defined, a character indicating the
+ * element type.
+ * @return A boolean indicating if the element is high and moveable or not.
+ *)
 let isHighMoveable element = 
   match element with
       None -> false
     | Some e -> e = Char.uppercase e;;
 
+(**
+ * Get the element type of a given element.
+ *
+ * @param elem An one-dimensional array giving the abscissa and the ordinate of
+ * the point to consider.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return An option giving, if defined, the type of the element, otherwise if
+ * it is undefined it means that the given position is out of bounds.
+ *)
 let getElem elem field size =
   if elem.(0) < 0 || elem.(0) >= size.(0) || elem.(1) < 0 ||
      elem.(1) >= size.(1)
@@ -85,6 +188,15 @@ let getElem elem field size =
     Some field.(elem.(0)).(elem.(1))
 ;;
     
+(**
+ * Get the direction movement vector for a given position and direction.
+ *
+ * @param elem An one-dimensional array giving the abscissa and the ordinate of
+ * the point to consider.
+ * @param direction The direction in which to move.
+ * @return A one dimensional array giving the movements to do in terms of
+ * abscissa and ordinate to actually move in the given direction.
+ *)
 let getDirectionVector elem direction =
   if direction = const_north
   then
@@ -119,6 +231,18 @@ let getDirectionVector elem direction =
       [|0; 1|]
 ;;
     
+(**
+ * Get the element type and position of the point reached after a movement.
+ *
+ * @param elem An one-dimensional array giving the abscissa and the ordinate of
+ * the point to consider.
+ * @param direction The direction in which to move.
+ * @param distance The distance of the move.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return A couple with the element type (as an option) and the position (as an
+ * one-dimensional array) of the reached point.
+ *)
 let getRelElem elem direction distance field size =
   let pos = ref [|elem.(0); elem.(1)|] in
   
@@ -168,6 +292,14 @@ def destroy(elem):
     return result;
  *)
 
+(**
+ * Read the map (field) of the level from a given file.
+ *
+ * @param filename The name of the file from which to read the map.
+ * @return A triplet containing the size of the field (one-dimensional array),
+ * the field itself (two-dimensional array) and the coordinates of the starting
+ * point (one-dimensional array).
+ *)
 let readMap filename =
   try
     let file = open_in filename in

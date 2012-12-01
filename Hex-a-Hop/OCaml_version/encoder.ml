@@ -1,9 +1,27 @@
 open Common
 
+(**
+ * Check if the start is not placed on a water field.
+ *
+ * @param start An one-dimensional array giving the abscissa and the ordinate of
+ * the starting point.
+ * @param field The field of the level (two-dimensional array).
+ * @return True if the start is placed correctly, false if not.
+ *) 
 let verifyStart start field = field.(start.(0)).(start.(1)) != const_water;;
 
-let getStateClauses field size timeSteps formula =
-  for t = 0 to timeSteps do
+(**
+ * Generate the clauses related to the position of the player and add them to
+ * the formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
+let getStateClauses field size timesteps formula =
+  for t = 0 to timesteps do
     let clause = ref [] in
     (* at every timestep, the player has to be somewhere *)
     for x = 0 to size.(0) - 1 do
@@ -42,6 +60,16 @@ let getStateClauses field size timeSteps formula =
   done
 ;;
 
+(**
+ * Get the list of directly accessible neighbours from a given position.
+ *
+ * @param position An one-dimensional array giving the abscissa and the ordinate
+ * of the point to consider.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return The list of positions (one-dimensional arrays) of the directly
+ * accessible neighbours.
+ *)
 let getNeighbours position field size =
   let result = ref [] in
   let directions = [const_north; const_south; const_northwest; const_southwest;
@@ -55,6 +83,17 @@ let getNeighbours position field size =
   !result
 ;;
 
+(**
+ * Get the list of all accessible neighbours from a given position (especially
+ * thanks to trampolines).
+ *
+ * @param position An one-dimensional array giving the abscissa and the ordinate
+ * of the point to consider.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return The list of positions (one-dimensional arrays) of all the accessible
+ * neighbours.
+ *)
 let getAccessibleNeighbours position field size =
   let result = ref [] in
   let directions = [const_north; const_south; const_northwest; const_southwest;
@@ -90,6 +129,16 @@ let getAccessibleNeighbours position field size =
   !result
 ;;
 
+(**
+ * Generate the clauses related to the movements of the player and add them to
+ * the formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
 let getMovementClauses field size timesteps formula =
   for t = 0 to timesteps - 1 do
     for x = 0 to size.(0) - 1 do
@@ -252,6 +301,16 @@ def getHighMovementClauses(bigGreen,  bigTurq, size, timesteps):
     return result
  *)
 
+(**
+ * Generate the clauses related to the behaviour of the field's tiles and add
+ * them to the formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
 let getBehavioralClauses field size timesteps formula =
   for x = 0 to size.(0) - 1 do
     for y = 0 to size.(1) - 1 do
@@ -318,10 +377,31 @@ let getBehavioralClauses field size timesteps formula =
      *)
 ;;
 
+(**
+ * Generate the clauses related to the start of the level and add them to the
+ * formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param start An one-dimensional array giving the abscissa and the ordinate of
+ * the starting point.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
 let getStartClauses field size start formula =
   formula := [(encodeVar start.(0) start.(1) 0 size)] :: !formula
 ;;
 
+(**
+ * Generate the clauses related to the end of the level and add them to the
+ * formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
 let getEndClauses field size timesteps formula =
   let clause = ref [] in
 
@@ -363,17 +443,17 @@ else
   then
     failwith "Invalid map. The player has to start on a non-waterfield.";
 
-  let timeSteps = try int_of_string Sys.argv.(2)
+  let timesteps = try int_of_string Sys.argv.(2)
                   with Failure s ->
                          failwith "The given number isn't an integer or is too \
                                    huge."
   in
 
   let formula = ref [] in
-  getStateClauses !field size timeSteps formula;
-  getMovementClauses !field size timeSteps formula;
-  getBehavioralClauses !field size timeSteps formula;
+  getStateClauses !field size timesteps formula;
+  getMovementClauses !field size timesteps formula;
+  getBehavioralClauses !field size timesteps formula;
   getStartClauses !field size start formula;
-  getEndClauses !field size timeSteps formula;
+  getEndClauses !field size timesteps formula;
 
   Dimacs_cnf.write_formula_to_file (!formula, !Common.maxVar) Sys.argv.(3);
