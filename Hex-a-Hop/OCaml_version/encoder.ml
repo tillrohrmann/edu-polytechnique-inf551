@@ -156,18 +156,81 @@ let getMovementClauses field size timesteps formula =
     done
   done
 ;;
-    
+
+(**
+ * Generate the clauses related to the accessibility of high (big) elements and
+ * add them to the formula.
+ *
+ * @param big A list containing the different positions (one-dimensional arrays)
+ * of the big elements.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
+let getBigClauses big field size timesteps formula =
+  let rec getBigClauses_aux big =
+    match big with
+        [] -> ()
+      | h::t ->
+          let tileType = getTileType field.(h.(0)).(h.(1)) in
+          for ts = 0 to timesteps do
+            formula := [-(encodeVar h.(0) h.(1) ts size);
+                        encodeTypeHeightVar tileType (ts - 1) size timesteps] ::
+                       !formula
+          done;
+          getBigClauses_aux t
+  in
+
+  getBigClauses_aux big;
+  for tileType = 1 to nb_types do
+    for t = 0 to timesteps - 1 do
+      formula := [-(encodeTypeHeightVar tileType t size timesteps);
+                  encodeTypeHeightVar tileType (t + 1) size timesteps] ::
+                 !formula
+    done
+  done
+;;
+
+(**
+ * Generate the clauses related to the sinking conditions of high (big) elements
+ * and add them to the formula.
+ *
+ * @param elementType The element type (character) for which to generate the
+ * sinking clauses.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
+let getHighElementsSinkingClauses elementType field size timesteps formula =
+  let tileType = getTileType elementType in
+
+  let rec getHighElementsSinkingClauses_aux smallElements =
+    match smallElements with
+        [] -> ()
+      | h::t ->
+          for ts = 0 to timesteps do
+            let clause = ref [-(encodeTypeHeightVar tileType ts size timesteps)]
+            in
+
+            for ts' = 0 to ts - 1 do
+              clause := (encodeVar h.(0) h.(1) ts' size) :: !clause
+            done;
+
+            formula := !clause :: !formula
+          done;
+
+          getHighElementsSinkingClauses_aux t;
+  in
+
+  let smallElements = findSmallElem elementType field size in
+  getHighElementsSinkingClauses_aux smallElements
+;;
+
 (*
-def getBigClauses(big, size, timesteps):
-    result = []
-    
-    for elem in big:
-        for t in range(timesteps):
-            clause = [-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t, size)]
-        result.append(clause)
-    
-    return result
-    
 def getSmallBigClauses(small, big, size, timesteps):
     result =[]
     for elem in big:
@@ -349,7 +412,13 @@ let getBehavioralClauses field size timesteps formula =
           done
         end
     done
-  done
+  done;
+
+  getBigClauses ((findBigElem const_green field size) @
+                 (findBigElem const_turquoise field size)) field size timesteps
+                formula;
+  getHighElementsSinkingClauses const_green field size timesteps formula;
+  getHighElementsSinkingClauses const_turquoise field size timesteps formula;
                             
     (*
     #model that high stones sink down if all flat stones of the same kind have been destroyed

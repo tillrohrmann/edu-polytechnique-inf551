@@ -44,6 +44,26 @@ let encodeVar x y t size =
 ;;
 
 (**
+ * Get the tile type number associated to an element type.
+ *
+ * @param elementType The element type (character) to look for its tile type
+ * number.
+ * @return A number (positive integer) giving the associated tile type, 0 if the
+ * given element type has none.
+ *)
+let getTileType elementType =
+  let lowerType = Char.lowercase elementType in
+  if lowerType = const_green
+  then
+    green_type
+  else if lowerType = const_turquoise
+  then
+    turquoise_type
+  else
+    0
+;;
+
+(**
  * Generate a variable indicating if all the low tiles of a given type have been
  * destroyed, and therefore all the high tiles have sunk down.
  * 
@@ -98,7 +118,8 @@ let decodeVar value size =
 let isAccessible element =
   match element with
       None -> false
-    | Some e -> e <> const_water;;
+    | Some e -> e <> const_water
+;;
     
 (**
  * Check if a given element is green.
@@ -110,7 +131,8 @@ let isAccessible element =
 let isGreen element =
   match element with
       None -> false
-    | Some e -> Char.lowercase e = const_green;;
+    | Some e -> Char.lowercase e = const_green
+;;
 
 (**
  * Check if a given element is turquoise.
@@ -122,7 +144,8 @@ let isGreen element =
 let isTurquoise element = 
   match element with
       None -> false
-    | Some e -> Char.lowercase e = const_turquoise;;
+    | Some e -> Char.lowercase e = const_turquoise
+;;
 
 (**
  * Check if a given element is destroyable.
@@ -143,7 +166,8 @@ let isDestroyable element = isGreen element || isTurquoise element;;
 let isTrampoline element = 
   match element with
       None -> false
-    | Some e -> Char.lowercase e = const_trampoline;;
+    | Some e -> Char.lowercase e = const_trampoline
+;;
     
 (**
  * Check if a given element is high.
@@ -155,7 +179,8 @@ let isTrampoline element =
 let isHigh element = 
   match element with
       None -> false
-    | Some e -> e = Char.uppercase const_stone;;
+    | Some e -> e = Char.uppercase const_stone
+;;
     
 (**
  * Check if a given element is high and moveable.
@@ -167,7 +192,8 @@ let isHigh element =
 let isHighMoveable element = 
   match element with
       None -> false
-    | Some e -> e = Char.uppercase e;;
+    | Some e -> e = Char.uppercase e
+;;
 
 (**
  * Get the element type of a given element.
@@ -259,24 +285,53 @@ let getRelElem elem direction distance field size =
   getRelElem_aux distance;
   (getElem !pos field size, !pos);
 ;;
+
+(**
+ * Find the position of all the elements of a given type.
+ *
+ * @param elem The type (as a character) of the elements to look for.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return A list containing the positions (as one-dimensional arrays) of the
+ * searched elements.
+ *)
+let findElem elem field size =
+  let result = ref [] in
+  
+  for x = 0 to size.(0) - 1 do
+    for y = 0 to size.(1) - 1 do
+      if field.(x).(y) = elem
+      then
+        result := [|x; y|] :: !result
+    done
+  done;
+  
+  !result
+;;
     
+(**
+ * Find the position of all the small elements of a given type.
+ *
+ * @param elem The type (as a character) of the elements to look for.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return A list containing the positions (as one-dimensional arrays) of the
+ * searched elements.
+ *)
+let findSmallElem elem field size = findElem (Char.lowercase elem) field size;;
+    
+(**
+ * Find the position of all the big elements of a given type.
+ *
+ * @param elem The type (as a character) of the elements to look for.
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @return A list containing the positions (as one-dimensional arrays) of the
+ * searched elements.
+ *)
+let findBigElem elem field size = findElem (Char.uppercase elem) field size;;
+
 (*
-def findElem(elem, field, size):
-    result = [];
-    
-    for x in range(size[0]):
-        for y in range(size[1]):
-            if(field[x][y] == elem):
-                result.append((x, y));
-                
-    return result;
-    
-def findSmallElem(elem, field, size):
-    return findElem(elem.lower(), field, size)
-    
-def findBigElem(elem, field, size):
-    return findElem(elem.upper(), field, size)
-    
 def destroy(elem):
     result = CONST_WATER
     if(isGreen(elem)):
