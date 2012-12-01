@@ -1,0 +1,1 @@
+rm *.cmi *.cmx *.o
