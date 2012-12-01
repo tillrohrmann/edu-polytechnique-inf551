@@ -376,5 +376,4 @@ else
   getStartClauses !field size start formula;
   getEndClauses !field size timeSteps formula;
 
-  Dimacs_cnf.write_formula_to_file (!formula, size.(0) * size.(1) *
-                                    (timeSteps + 1)) Sys.argv.(3);
+  Dimacs_cnf.write_formula_to_file (!formula, !Common.maxVar) Sys.argv.(3);

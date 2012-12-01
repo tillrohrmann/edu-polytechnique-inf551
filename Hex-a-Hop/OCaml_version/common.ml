@@ -11,12 +11,17 @@ let const_northeast = 5;;
 let const_southeast = 6;;
 
 let counter = ref 0;;
+let maxVar = ref 0;;
 
 let getMaxMovementVariables size timesteps =
   size.(1) - 1 + size.(1) * (size.(0) - 1) + size.(0) * size.(1) * timesteps + 2
 ;;
 
-let encodeVar x y t size = y + size.(1) * x + size.(0) * size.(1) * t + 1;;
+let encodeVar x y t size =
+  let var = y + size.(1) * x + size.(0) * size.(1) * t + 1 in
+  if var > !maxVar then maxVar := var;
+  var
+;;
     
 let encodeState x y t size timesteps =
   y + size.(1) * x + size.(0) * size.(1) * t + 1 +
