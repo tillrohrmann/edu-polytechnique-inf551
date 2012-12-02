@@ -158,6 +158,123 @@ let getMovementClauses field size timesteps formula =
 ;;
 
 (**
+ * Generate the clauses related to the dynamic type of some tiles and add them
+ * to the formula.
+ *
+ * @param field The field of the level (two-dimensional array).
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The total number of timesteps.
+ * @param formula A reference to the propositional logic formula in CNF
+ * associated to the level (list of clauses, which are lists of integers).
+ *)
+let getDynamicTypeClauses field size timesteps formula =
+  (* First add the clauses for the initial type of the tiles. *)
+  for i = 0 to size.(0) - 1 do
+    for j = 0 to size.(1) - 1 do
+      let tileType = getTileType field.(i).(j) in
+
+      let rec addInitialDynamicTypeClauses tileTypes =
+        match tileTypes with
+            [] -> ()
+          | h::t ->
+              if tileType = h
+              then
+                formula := [encodeDynamicTypeVar i j 0 h size timesteps] ::
+                           !formula
+              else
+                formula := [-(encodeDynamicTypeVar i j 0 h size timesteps)] ::
+                           !formula;
+
+              addInitialDynamicTypeClauses t
+      in
+
+      addInitialDynamicTypeClauses tile_types
+    done
+  done;
+
+  for i = 0 to size.(0) - 1 do
+    for j = 0 to size.(1) - 1 do
+      for t = 1 to timesteps do
+        (* If the tile wasn't of type "turquoise" at the previous step, it isn't
+           the case for the current step too.
+         *)
+        formula := [encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                         timesteps;
+                    -(encodeDynamicTypeVar i j t turquoise_type size timesteps)]
+                   :: !formula;
+
+        (* If the tile was of type "turquoise" at the previous step and was
+           visited at the same time, it isn't of type "turquoise" at the current
+           step anymore.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                           timesteps);
+                    -(encodeVar i j (t - 1) size);
+                    -(encodeDynamicTypeVar i j t turquoise_type size timesteps)]
+                   :: !formula;
+
+        (* If the tile was of type "turquoise" at the previous step but wasn't
+           visited at the same time, it is of type "turquoise" at the current
+           step.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                           timesteps);
+                    encodeVar i j (t - 1) size;
+                    encodeDynamicTypeVar i j t turquoise_type size timesteps]
+                   :: !formula;
+
+        (* If the tile wasn't neither of type "green", nor of type "turquoise"
+           at the previous step, it isn't of type "green" at the current step.
+         *)
+        formula := [encodeDynamicTypeVar i j (t - 1) green_type size timesteps;
+                    encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                         timesteps;
+                    -(encodeDynamicTypeVar i j t green_type size timesteps)]
+                   :: !formula;
+
+        (* If the tile was of type "turquoise" at the previous step and was
+           visited at the same time, it is of type "green" at the current step.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                           timesteps);
+                    -(encodeVar i j (t - 1) size);
+                    encodeDynamicTypeVar i j t green_type size timesteps]
+                   :: !formula;
+
+        (* If the tile was of type "turquoise" at the previous step but wasn't
+           visited at the same time, it isn't of type "green" at the current
+           step.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) turquoise_type size
+                                           timesteps);
+                    encodeVar i j (t - 1) size;
+                    -(encodeDynamicTypeVar i j t green_type size timesteps)]
+                   :: !formula;
+
+        (* If the tile was of type "green" at the previous step and was visited
+           at the same time, it isn't of type "green" at the current step
+           anymore.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) green_type size
+                                           timesteps);
+                    -(encodeVar i j (t - 1) size);
+                    -(encodeDynamicTypeVar i j t green_type size timesteps)]
+                   :: !formula;
+
+        (* If the tile was of type "green" at the previous step but wasn't
+           visited at the same time, it is of type "green" at the current step.
+         *)
+        formula := [-(encodeDynamicTypeVar i j (t - 1) green_type size
+                                           timesteps);
+                    encodeVar i j (t - 1) size;
+                    encodeDynamicTypeVar i j t green_type size timesteps]
+                   :: !formula;
+      done
+    done
+  done
+;;
+
+(**
  * Generate the clauses related to the accessibility of high (big) elements and
  * add them to the formula.
  *
@@ -175,17 +292,27 @@ let getBigClauses big field size timesteps formula =
         [] -> ()
       | h::t ->
           let tileType = getTileType field.(h.(0)).(h.(1)) in
-          for ts = 0 to timesteps do
+
+          (* For each timestep, if the high tile is accessed, it must have been
+             sunk down at the previous step.
+           *)
+          for ts = 1 to timesteps do
             formula := [-(encodeVar h.(0) h.(1) ts size);
                         encodeTypeHeightVar tileType (ts - 1) size timesteps] ::
                        !formula
           done;
+
           getBigClauses_aux t
   in
 
   getBigClauses_aux big;
+
+  (* Add propagation (implication) clauses for the type height status variables.
+   *)
   for tileType = 1 to nb_types do
-    for t = 0 to timesteps - 1 do
+    formula := [-(encodeTypeHeightVar tileType 0 size timesteps)] :: !formula;
+
+    for t = 1 to timesteps - 1 do
       formula := [-(encodeTypeHeightVar tileType t size timesteps);
                   encodeTypeHeightVar tileType (t + 1) size timesteps] ::
                  !formula
@@ -208,6 +335,27 @@ let getBigClauses big field size timesteps formula =
 let getHighElementsSinkingClauses elementType field size timesteps formula =
   let tileType = getTileType elementType in
 
+  (* For each time step, all the high tiles of a given type are sunk down if
+     they already were in the previous step or if no low tile having the same
+     dynamic type was present at the previous step.
+   *)
+  for t = 1 to timesteps do
+    let typeHeightVar = encodeTypeHeightVar tileType t size timesteps in
+    let prevTypeHeightVar = encodeTypeHeightVar tileType (t - 1) size timesteps
+    in
+
+    for i = 0 to size.(0) - 1 do
+      for j = 0 to size.(1) - 1 do
+        if field.(i).(j) <> (Char.uppercase elementType)
+        then
+          formula := [-typeHeightVar; prevTypeHeightVar;
+                      -(encodeDynamicTypeVar i j (t - 1) tileType size
+                                             timesteps)] :: !formula
+      done
+    done
+  done
+
+  (*
   let rec getHighElementsSinkingClauses_aux smallElements =
     match smallElements with
         [] -> ()
@@ -227,142 +375,29 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
   in
 
   let smallElements = findSmallElem elementType field size in
-  getHighElementsSinkingClauses_aux smallElements
+  getHighElementsSinkingClauses_aux smallElements;
+
+  if (tileType = green_type)
+  then
+    List.iter
+      (fun pos ->
+         for ts = 1 to timesteps do
+           for ts' = 0 to ts - 1 do
+             let clause = ref [-(encodeTypeHeightVar tileType ts size timesteps)
+                               ; -(encodeVar pos.(0) pos.(1) ts' size)] in
+
+             for ts'' = 0 to ts - 1 do
+               if ts' <> ts''
+               then
+                 clause := (encodeVar pos.(0) pos.(1) ts'' size) :: !clause
+             done;
+
+             formula := !clause :: !formula
+           done
+         done)
+      (findSmallElem const_turquoise field size)
+   *)
 ;;
-
-(*
-def getSmallBigClauses(small, big, size, timesteps):
-    result =[]
-    for elem in big:
-        for t in range(2, timesteps):
-            for smallElem in small:
-                clause = [-encodeVar(elem[0], elem[1], t, size)];
-                for u in range(t-1):
-                    clause.append(encodeVar(smallElem[0], smallElem[1], u, size))
-                result.append(clause);
-                
-    return result;
-    
-def getSmallBigClausesDifference1(small, big, size, timesteps):
-    result = []
-    for elem in big:
-        for t in range(2, timesteps):
-            for smallElem in small:
-                for u in range(t-1):
-                    clause = [-encodeVar(elem[0], elem[1], t, size), -encodeVar(smallElem[0], smallElem[1], u, size)];
-                    for v in range(t-1):
-                        if(v != u):
-                            clause.append(encodeVar(smallElem[0], smallElem[1], v, size))
-                    result.append(clause);
-                    
-    return result;
-    
-def getHighClauses(smallGreen, bigGreen, smallTurq, bigTurq, size, timesteps):
-    result =[];
-    
-    for elem in bigTurq:
-            prevVar = encodeState(elem[0], elem[1], 0, size, timesteps)
-            result.append([-prevVar])
-            for t in range(timesteps):
-                var = encodeState(elem[0], elem[1], t+1, size, timesteps)
-                
-                allDestroyed = [];
-                if(t ==0):
-                    allDestroyed = [[prevVar]]
-                else:
-                    for sElem in smallTurq:
-                        clause = [prevVar]
-                        for u in range(t+1):
-                            clause.append(encodeVar(sElem[0], sElem[1], u, size));
-                        allDestroyed.append(clause)
-                    
-                for clause in allDestroyed:
-                    temp = [-var] + clause;
-                    result.append(temp);
-            
-                temp = [var];
-                for clause in allDestroyed:
-                    tempVar = helperVariable(size, timesteps)
-                    temp.append(-tempVar);
-                    result.append(clause+[-tempVar])
-                
-                    for c in clause:
-                        result.append([tempVar, -c])
-                        
-                gc.collect()
-                result.append(temp);
-
-            
-                prevVar = var
-    for elem in bigGreen:
-            prevVar = encodeState(elem[0], elem[1], 0, size, timesteps)
-            result.append([-prevVar])
-            for t in range(timesteps):
-                var = encodeState(elem[0], elem[1], t+1, size, timesteps)
-                
-                allDestroyed = [];
-                if(t ==0):
-                    allDestroyed = [[prevVar]]
-                else:
-                    for sElem in smallGreen:
-                        clause = [prevVar]
-                        for u in range(t+1):
-                            clause.append(encodeVar(sElem[0], sElem[1], u, size));
-                        allDestroyed.append(clause)
-                    for sElem in smallTurq:
-                        for u in range(t+1):
-                            clause = [prevVar, -encodeVar(sElem[0], sElem[1], u, size)]
-                            for v in range(t+1):
-                                if(u != v):
-                                    clause.append(encodeVar(sElem[0], sElem[1], v, size))
-                            allDestroyed.append(clause)
-                    
-                for clause in allDestroyed:
-                    temp = [-var] + clause;
-                    result.append(temp);
-            
-                temp = [var];
-                for clause in allDestroyed:
-                    tempVar = helperVariable(size, timesteps)
-                    temp.append(-tempVar);
-                    result.append(clause+[-tempVar])
-                
-                    for c in clause:
-                        result.append([tempVar, -c])
-                gc.collect()
-                result.append(temp);
-                
-            
-                prevVar = var
-    
-    return result;
-    
-def getHighMovementClauses(bigGreen,  bigTurq, size, timesteps):
-    result = []
-    
-    for elem in bigGreen:
-        for t in range(1, timesteps+1):
-            neighbours = getNeighbours(elem, field, size)
-            result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps), encodeState(elem[0], elem[1], t, size, timesteps)])
-            if(len(neighbours) > 0):
-                for neighbour in neighbours:
-                    result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps), -encodeVar(neighbour[0], neighbour[1], t-1, size)]);
-            else:
-                result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps)]);
-            
-    
-    for elem in bigTurq:
-        for t in range(1, timesteps+1):
-            neighbours = getNeighbours(elem, field, size)
-            result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps), encodeState(elem[0], elem[1], t, size, timesteps)])
-            if(len(neighbours) > 0):
-                for neighbour in neighbours:
-                    result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps), -encodeVar(neighbour[0], neighbour[1], t-1, size)]);
-            else:
-                result.append([-encodeVar(elem[0], elem[1], t, size), encodeState(elem[0], elem[1], t-1, size, timesteps)]);
-    
-    return result
- *)
 
 (**
  * Generate the clauses related to the behaviour of the field's tiles and add
@@ -419,31 +454,6 @@ let getBehavioralClauses field size timesteps formula =
                 formula;
   getHighElementsSinkingClauses const_green field size timesteps formula;
   getHighElementsSinkingClauses const_turquoise field size timesteps formula;
-                            
-    (*
-    #model that high stones sink down if all flat stones of the same kind have been destroyed
-    smallGreens = findSmallElem(CONST_GREEN, field, size);
-    bigGreens = findBigElem(CONST_GREEN, field, size);
-    
-    smallTurq = findSmallElem(CONST_TURQUOISE, field, size);
-    bigTurq = findBigElem(CONST_TURQUOISE, field, size);
-    
-    clauses = getHighClauses(smallGreens, bigGreens, smallTurq, bigTurq, size, timesteps);
-    result += clauses;
-    
-    clauses = getHighMovementClauses(bigGreens, bigTurq, size, timesteps)
-    result += clauses;
-    
-    #clauses = getBigClauses(bigGreens, size, timesteps);
-    #result += clauses;
-    #clauses = getBigClauses( bigTurq, size, timesteps);
-    #result += clauses;
-    
-    #clauses = getSmallBigClausesDifference1(smallTurq, bigGreens, size, timesteps);
-    #result += clauses
-    
-    return result;
-     *)
 ;;
 
 (**
@@ -521,6 +531,7 @@ else
   let formula = ref [] in
   getStateClauses !field size timesteps formula;
   getMovementClauses !field size timesteps formula;
+  getDynamicTypeClauses !field size timesteps formula;
   getBehavioralClauses !field size timesteps formula;
   getStartClauses !field size start formula;
   getEndClauses !field size timesteps formula;

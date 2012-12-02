@@ -10,6 +10,8 @@ let nb_types = 2;;
 let green_type = 1;;
 (** The type number of turquoise. *)
 let turquoise_type = 2;;
+(** The list of all tile types. *)
+let tile_types = [green_type; turquoise_type];;
 
 let const_north = 1;;
 let const_south = 2;;
@@ -18,14 +20,8 @@ let const_southwest = 4;;
 let const_northeast = 5;;
 let const_southeast = 6;;
 
-let counter = ref 0;;
-
 (** Stores the maximum value of a used (encoded variable). *)
 let maxVar = ref 0;;
-
-let getMaxMovementVariables size timesteps =
-  size.(1) - 1 + size.(1) * (size.(0) - 1) + size.(0) * size.(1) * timesteps + 2
-;;
 
 (**
  * Generate a variable indicating that the player is at a given position at a
@@ -41,6 +37,17 @@ let encodeVar x y t size =
   let var = y + size.(1) * x + size.(0) * size.(1) * t + 1 in
   if var > !maxVar then maxVar := var;
   var
+;;
+
+(**
+ * Get the maximum value of a movement variable.
+ *
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The maximum value of a movement variable.
+ *)
+let getMaxMovementVar size timesteps =
+  size.(0) * size.(1) * (timesteps + 1)
 ;;
 
 (**
@@ -64,6 +71,37 @@ let getTileType elementType =
 ;;
 
 (**
+ * Generate a variable indicating if the type of an element at a given timestep
+ * is of a given tile type or not.
+ * 
+ * @param x The abscissa of the position.
+ * @param y The ordinate of the position.
+ * @param t The timestep.
+ * @param tileType The type of the tile.
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The value of the encoded variable.
+ *)
+let encodeDynamicTypeVar x y t tileType size timesteps =
+  let var = (getMaxMovementVar size timesteps) + tileType + nb_types * y +
+            nb_types * size.(1) * x + nb_types * size.(1) * size.(0) * t in
+  if var > !maxVar then maxVar := var;
+  var
+;;
+
+(**
+ * Get the maximum value of a dynamic type variable.
+ *
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The maximum value of a dynamic type variable.
+ *)
+let getMaxDynamicTypeVar size timesteps =
+  (getMaxMovementVar size timesteps) + nb_types * size.(0) * size.(1) *
+  (timesteps + 1)
+;;
+
+(**
  * Generate a variable indicating if all the low tiles of a given type have been
  * destroyed, and therefore all the high tiles have sunk down.
  * 
@@ -74,20 +112,9 @@ let getTileType elementType =
  * @return The value of the encoded variable.
  *)
 let encodeTypeHeightVar tileType t size timesteps =
-  let var = size.(0) * size.(1) * (timesteps + 1) + tileType + t * nb_types in
+  let var = (getMaxDynamicTypeVar size timesteps) + tileType + t * nb_types in
   if var > !maxVar then maxVar := var;
   var
-;;
-    
-let encodeState x y t size timesteps =
-  y + size.(1) * x + size.(0) * size.(1) * t + 1 +
-  (getMaxMovementVariables size timesteps)
-;;
-        
-let helperVariable size timesteps =
-  let numberMovementVariables = 2 * (getMaxMovementVariables size timesteps) in
-  counter := !counter + 1;
-  numberMovementVariables + !counter - 1
 ;;
 
 (**

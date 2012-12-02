@@ -1,5 +1,5 @@
 #!/bin/bash
-#SAT=../../minisat/simp/minisat
+#SAT=minisat2
 SAT=../../../glucose/glucose_2.1/glucose_static
 echo $2
 echo "Encoding..."
