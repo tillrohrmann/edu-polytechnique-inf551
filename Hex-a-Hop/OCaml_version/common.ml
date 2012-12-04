@@ -5,11 +5,13 @@ let const_turquoise = 't';;
 let const_stone = 's';;
 
 (** The number of different tiles types. *)
-let nb_types = 2;;
+let nb_types = 3;;
 (** The type number of green. *)
 let green_type = 1;;
 (** The type number of turquoise. *)
 let turquoise_type = 2;;
+(** The type number of destroyed *)
+let destroyed_type = 3;;
 (** The list of all tile types. *)
 let tile_types = [green_type; turquoise_type];;
 
