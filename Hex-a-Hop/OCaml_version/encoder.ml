@@ -482,33 +482,13 @@ let getStartClauses field size start formula =
  * associated to the level (list of clauses, which are lists of integers).
  *)
 let getEndClauses field size timesteps formula =
-  let clause = ref [] in
-
-  (* the player has to be on a non-destroyable field at the last timestep *)
-  for x = 0 to size.(0) - 1 do
-    for y = 0 to size.(1) - 1 do
-      if isAccessible (getElem [|x; y|] field size) &&
-         not (isGreen (getElem [|x; y|] field size))
-      then
-        clause := (encodeVar x y timesteps size) :: !clause
+  let tileTypeGreen = green_type in 
+   for x = 0 to size.(0) -1 do
+    for y = 0 to size.(1) -1 do
+      if isDestroyable (getElem [|x;y|] field size) then
+	formula := [-(encodeDynamicTypeVar x y timesteps tileTypeGreen size timesteps )]::!formula
     done
   done;
-  formula := !clause :: !formula;
-
-  (* all green tiles have to be destroyed *)
-  for x = 0 to size.(0) - 1 do
-    for y = 0 to size.(1) - 1 do
-      if isGreen (getElem [|x; y|] field size)
-      then
-        begin
-          clause := [];
-          for t = 0 to timesteps - 1 do
-            clause := (encodeVar x y t size) :: !clause
-          done;
-          formula := !clause :: !formula
-        end
-    done
-  done
 ;;
 
 if Array.length Sys.argv <> 4
