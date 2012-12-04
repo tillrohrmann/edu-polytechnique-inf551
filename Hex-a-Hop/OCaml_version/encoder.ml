@@ -147,9 +147,29 @@ let getMovementClauses field size timesteps formula =
         then
           begin
             let neighbours = getAccessibleNeighbours [|x; y|] field size in
-            let clause = ref [-(encodeVar x y t size)] in
-            List.iter (fun n -> clause := (encodeVar n.(0) n.(1) (t+1) size) ::
-                                          !clause) neighbours;
+            let positionVar = encodeVar x y t size in
+            let clause = ref [-positionVar] in
+
+            List.iter (fun n ->
+                         clause := (encodeVar n.(0) n.(1) (t+1) size) ::
+                                   !clause;
+
+                         (* Check if we used a trampoline and set the
+                            corresponding variable accordingly.
+                          *)
+                         if (max (abs (n.(0) - x)) (abs (n.(1) - y))) > 1
+                         then
+                           formula := [-positionVar;
+                                       -(encodeVar n.(0) n.(1) (t+1) size);
+                                       encodeTrampolineVar t size timesteps] ::
+                                      !formula
+                         
+                         else
+                           formula := [-positionVar;
+                                       -(encodeVar n.(0) n.(1) (t+1) size);
+                                       -encodeTrampolineVar t size timesteps] ::
+                                      !formula)
+                      neighbours;
             formula := !clause :: !formula
           end
       done
@@ -311,12 +331,19 @@ let getBigClauses big field size timesteps formula =
           let tileType = getTileType field.(h.(0)).(h.(1)) in
 
           (* For each timestep, if the high tile is accessed, it must have been
-             sunk down at the previous step.
+             sunk down at the previous step if the tile we come from isn't a
+             trampoline, or at the current step if the we come from a
+             trampoline.
            *)
           for ts = 1 to timesteps do
             formula := [-(encodeVar h.(0) h.(1) ts size);
+                        -(encodeTrampolineVar (ts - 1) size timesteps);
+                        encodeTypeHeightVar tileType ts size timesteps] ::
+                       !formula;
+            formula := [-(encodeVar h.(0) h.(1) ts size);
+                        encodeTrampolineVar (ts - 1) size timesteps;
                         encodeTypeHeightVar tileType (ts - 1) size timesteps] ::
-                       !formula
+                       !formula;
           done;
 
           getBigClauses_aux t

@@ -120,6 +120,32 @@ let encodeTypeHeightVar tileType t size timesteps =
 ;;
 
 (**
+ * Get the maximum value of a type height variable.
+ *
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The maximum value of a type height variable.
+ *)
+let getMaxTypeHeightVar size timesteps =
+  (getMaxDynamicTypeVar size timesteps) + nb_types * (timesteps + 1)
+;;
+
+(**
+ * Generate a variable indicating if a trampoline was accessed at a given
+ * timestep.
+ * 
+ * @param t The timestep.
+ * @param size The size of the field (one-dimensional array).
+ * @param timesteps The number of timesteps.
+ * @return The value of the encoded variable.
+ *)
+let encodeTrampolineVar t size timesteps =
+  let var = (getMaxTypeHeightVar size timesteps) + t + 1 in
+  if var > !maxVar then maxVar := var;
+  var
+;;
+
+(**
  * Decode a position and timestep variable.
  *
  * @param value The value of the variable.
