@@ -366,7 +366,7 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
         if field.(i).(j) <> (Char.uppercase elementType)
         then
           formula := [-typeHeightVar; prevTypeHeightVar;
-                      -(encodeDynamicTypeVar i j (t - 1) tileType size
+                      -(encodeDynamicTypeVar i j t tileType size
                                              timesteps)] :: !formula
       done
     done
@@ -427,6 +427,7 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
  * associated to the level (list of clauses, which are lists of integers).
  *)
 let getBehavioralClauses field size timesteps formula =
+(* every destroyable field which is accessed mustn't be destroyed before *)
   for x = 0 to size.(0) - 1 do
     for y = 0 to size.(1) - 1 do
       if isDestroyable (getElem[|x;y|] field size) then
