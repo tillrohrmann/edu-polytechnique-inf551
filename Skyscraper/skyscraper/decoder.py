@@ -9,6 +9,14 @@ Created on Nov 14, 2012
 import sys;
 import common;
 
+'''
+Print the solution of the skyscraper problem
+
+@param int size
+@param list (int,int) constraints
+@param list int positives
+    All positive variables (indicating which skyscraper to place on which field)
+'''
 def printResult(size, constraints,positives):
     field = [[0 for j in range(size)] for i in range(size)];
     
