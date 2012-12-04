@@ -208,7 +208,11 @@ let getDynamicTypeClauses field size timesteps formula =
               addInitialDynamicTypeClauses t
       in
 
-      addInitialDynamicTypeClauses tile_types
+      addInitialDynamicTypeClauses tile_types;
+      if isDestroyable (getElem[|i;j|] field size)
+      then
+	formula := [-(encodeDynamicTypeVar i j 0 destroyed_type size timesteps)]
+	  :: !formula
     done
   done;
 
@@ -289,6 +293,19 @@ let getDynamicTypeClauses field size timesteps formula =
                     encodeVar i j (t - 1) size;
                     encodeDynamicTypeVar i j t green_type size timesteps]
                    :: !formula;
+
+	(* If the tile was of type "destroyed" at the previous step it will be destroyed at the next timestep
+	*)
+	formula:=[-(encodeDynamicTypeVar i j (t-1) destroyed_type size timesteps);
+		  encodeDynamicTypeVar i j t destroyed_type size timesteps] :: 
+	  !formula;
+
+	(* If the tile was of type "green" at the previous step it will be destroyed at the next timestep
+	*)
+	formula:=[-(encodeDynamicTypeVar i j (t-1) green_type size timesteps);
+		  -(encodeVar i j (t-1) size);
+		  encodeDynamicTypeVar i j t destroyed_type size timesteps]
+	  :: !formula;
       done
     done
   done
@@ -437,42 +454,16 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
  * associated to the level (list of clauses, which are lists of integers).
  *)
 let getBehavioralClauses field size timesteps formula =
+(* every destroyable field which is accessed mustn't be destroyed before *)
   for x = 0 to size.(0) - 1 do
     for y = 0 to size.(1) - 1 do
-      (* a destroyable (green) field cannot be accessed twice *)
-      if isGreen (getElem [|x; y|] field size)
-      then
-        for t = 0 to timesteps - 2 do
-          for u = t + 1 to timesteps - 1 do
-            formula := [-(encodeVar x y t size); -(encodeVar x y u size)] ::
-                       !formula
-          done
-        done;
-
-      if isTurquoise (getElem [|x; y|] field size)
-      then
-        begin
-          (* if once visited it has to be visited a second time *)
-          for t = 0 to timesteps - 1 do
-            let clause = ref [-(encodeVar x y t size)] in
-              for u = 0 to timesteps - 1 do
-                if u <> t
-                then
-                  clause := (encodeVar x y u size) :: !clause
-              done;
-              formula := !clause :: !formula;
-          done;
-
-          (* turquoise fields can at most be accessed twice *)
-          for t = 0 to timesteps - 2 do
-            for u = t + 1 to timesteps - 1 do
-              for v = u + 1 to timesteps do
-                formula := [-(encodeVar x y t size); -(encodeVar x y u size);
-                            -(encodeVar x y v size)] :: !formula
-              done
-            done
-          done
-        end
+      if isDestroyable (getElem[|x;y|] field size) then
+	for t = 0 to timesteps do
+	  formula := [-(encodeVar x y t size); 
+		      -(encodeDynamicTypeVar x y t destroyed_type size timesteps)]
+	  :: !formula
+	    
+	done
     done
   done;
 
@@ -509,33 +500,13 @@ let getStartClauses field size start formula =
  * associated to the level (list of clauses, which are lists of integers).
  *)
 let getEndClauses field size timesteps formula =
-  let clause = ref [] in
-
-  (* the player has to be on a non-destroyable field at the last timestep *)
-  for x = 0 to size.(0) - 1 do
-    for y = 0 to size.(1) - 1 do
-      if isAccessible (getElem [|x; y|] field size) &&
-         not (isGreen (getElem [|x; y|] field size))
-      then
-        clause := (encodeVar x y timesteps size) :: !clause
+  let tileTypeGreen = green_type in 
+   for x = 0 to size.(0) -1 do
+    for y = 0 to size.(1) -1 do
+      if isDestroyable (getElem [|x;y|] field size) then
+	formula := [-(encodeDynamicTypeVar x y timesteps tileTypeGreen size timesteps )]::!formula
     done
   done;
-  formula := !clause :: !formula;
-
-  (* all green tiles have to be destroyed *)
-  for x = 0 to size.(0) - 1 do
-    for y = 0 to size.(1) - 1 do
-      if isGreen (getElem [|x; y|] field size)
-      then
-        begin
-          clause := [];
-          for t = 0 to timesteps - 1 do
-            clause := (encodeVar x y t size) :: !clause
-          done;
-          formula := !clause :: !formula
-        end
-    done
-  done
 ;;
 
 if Array.length Sys.argv <> 4
