@@ -1,0 +1,124 @@
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+% Including needed packages
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath}
+
+\title
+{{\em INF 551 - Computer-aided reasoning}\\
+Mini-project - Encoding funny games into SAT\\
+{\bf Report}}
+\author{ROHRMANN Till \and GROSSHANS Nathan}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Introduction}
+To complete.
+
+
+\section{Skyscraper}
+The skyscraper game is a little logical game that works like the Sudoku game.
+Having a square grid of a fixed size, your goal is to place skyscrapers of
+different heights (from 1 to the size of the grid) in the squares of the grid,
+such that a skyscraper of each height appears once and only once on each row and
+each column, and that the visibility constraints are respected. The visibility
+constraints are given by numbers, one on each side of a row or column,
+indicating how many buildings must be seen when looking from the given side
+towards the skyscraper row or column. There can also be no constraint at all for
+a given row or column side.
+
+\subsection{The encoding}
+To complete.
+
+\subsection{How to use the program}
+To complete.
+
+
+\section{Hex-a-Hop}
+Hex-a-Hop is a puzzle-based game with hundred levels where the player jumps from
+one hexagonal tile to another. The goal, for each level, is to destroy all the
+green tiles by visiting them once, without getting trapped or falling into the
+water. The levels gradually become more and more difficult, unveiling more and
+more new tile types having different behaviours (trampolines, high tiles...).
+
+\subsection{The encoding}
+
+\subsubsection{Representing a level}
+A level can be represented by a grid (field) of tiles of different types. As
+these tiles are hexagonal, the representation is a bit more complicated as if
+they where just squares. In fact, as two successive rows of tiles are
+"interleaved" in the sense that the tiles in a row appear each two columns
+alternately with the tiles in the adjacent rows, we can represent two rows of
+the level in one grid line where the tiles of one row are in the columns with
+odd column indexes and the tiles of the other row in the columns with even
+column indexes. Naturally, we must then be careful when doing movements around
+the grid.
+
+\subsubsection{The main idea of the encoding}
+The problem of deciding whether a Hex-a-Hop level can be solved can be
+transformed into the parameterized problem of deciding whether a Hex-a-Hop level
+can be solved in a given number of steps.
+The main idea of the encoding into a SAT CNF formula is to use a set of main
+variables indicating the position of the player at each timestep, that is to say
+the set of three-dimensional vectors $(x, y, t)$ where $x$ is the abscissa of
+the position, $y$ the ordinate of the position and $t$ the discrete timestep.
+
+Obviously, the first set of constraints (clauses) we therefore have to add are
+what we've called the {\em state clauses} :
+\begin{itemize}
+\item At each timestep, the player has to be somewhere, on a tile that is
+      accessible (no water), therefore we have the clauses containing all the
+      possible positions for a given timestep t :\\
+      $\bigwedge \limits_{t=0}^{t_{max}}
+       (\bigvee \limits_{\substack{i \in [\![0, x_{max}]\!]\\
+				   j \in [\![0, y_{max}]\!]\\
+				   (x_i, y_i) \, accessible}}
+	(x_i, y_j, t))$
+
+\item But the player can't be at two positions at the same time, therefore we
+      have all the clauses containing the negation of two different positions
+      for a given timestep t :\\
+      $\bigwedge \limits_{t=0}^{t_{max}}
+       (\bigwedge \limits_{\substack{\{(i, j), (i', j')\} \in
+				     \mathcal{P}({[\![0, x_{max}]\!] \times
+						  [\![0, y_{max}]\!]})}
+				     }
+	(\neg(x_i, y_i, t) \vee \neg(x_{i'}, y_{j'}, t)))
+       $
+\end{itemize}
+
+\subsubsection{The dynamic type of tiles}
+In our first version of the encoding, there were no more variables than those
+encoding the position at each timestep. But it is convenient to add some other
+variables, auxiliary variables, that help to memorize some useful states.
+Dynamic type variables therefore memorize the type a tile has at a given
+timestep, as it can be green, turquoise... These variables must be initialized
+correctly thanks to the initial state in the level, and their value must be
+correctly updated. Therefore, for each position and timestep $(x, y, t)$, we
+have the following implications (clauses) that cover all the possible cases :\\
+$\neg(x, y, t-1, d_{turquoise}) \Rightarrow (x, y, t, d_{turquoise})\\
+ (x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow
+					       \neg(x, y, t, d_{turquoise})\\
+ (x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
+						   (x, y, t, d_{turquoise})\\
+ \neg(x, y, t-1, d_{green}) \wedge \neg(x, y, t-1, d_{turquoise}) \Rightarrow
+						      \neg(x, y, t, d_{green})\\
+ (x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow
+					       (x, y, t, d_{green})\\
+ (x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
+						   \neg(x, y, t, d_{green})\\
+ (x, y, t-1, d_{green}) \wedge (x, y, t-1) \Rightarrow
+					   \neg(x, y, t, d_{green})\\
+ (x, y, t-1, d_{green}) \wedge \neg(x, y, t-1) \Rightarrow
+					       (x, y, t, d_{green})
+$
+
+
+\section{Conclusion}
+To complete.
+
+\end{document}
