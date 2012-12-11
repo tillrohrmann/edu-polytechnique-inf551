@@ -116,7 +116,13 @@ Since all of these formulas are already in CNF form there is no transformation n
 
 
 \subsection{How to use the program}
-To complete.
+The encoding is realized by the python program encoding.py. The only prerequisite to run the program is an installed python version. The program awaits an input file which specifies the field and the constraints. The first line contains the side length $n$ of the field. It is followed by $2\cdot n$ pairs of numbers, separated by a whitespace, specifying the constraints. The range for the constraints is $[0,\ldots,n]$ whereby $0$ denotes that there is no constraint. The first $n$ pairs specify the constraints for the lines, the first number indicating the left and the second number indicating the right constraint. The last $n$ pairs specify the column constraints, the first number indicating the top and the second number indicating the bottom constraint. The program outputs the encoding in the DIMACS format to the standard output and can thus be easily given to a third-party SAT solver capable of reading the DIMACS format.
+
+We used the Glucose SAT solver for our project because it could solve sufficiently fast our problems. But any other SAT solver can be used as well.
+
+The output of the SAT solver can be visualized by the python program decoding.py. The program expects as input arguments the file defining the field and the model calculated by the SAT solver. Given that, it will print the placement of the skyscraper on the field for the given constraints.
+
+For the sake of simplicity, we recommend to use the script skyscraper.sh which takes as single argument the field file and combines all of the aforementioned steps. The only thing one has to adapt is the path to the SAT solver.
 
 
 \section{Hex-a-Hop}
