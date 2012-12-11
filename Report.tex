@@ -38,6 +38,7 @@ To complete.
 To complete.
 
 
+
 \section{Hex-a-Hop}
 Hex-a-Hop is a puzzle-based game with hundred levels where the player jumps from
 one hexagonal tile to another. The goal, for each level, is to destroy all the
@@ -56,7 +57,58 @@ alternately with the tiles in the adjacent rows, we can represent two rows of
 the level in one grid line where the tiles of one row are in the columns with
 odd column indexes and the tiles of the other row in the columns with even
 column indexes. Naturally, we must then be careful when doing movements around
-the grid.
+the grid (the function {\em getDirectionVector} therefore gives the right
+movement to do on the grid when moving in a given direction).
+
+
+\subsubsection{The dynamic type of tiles}
+In our first version of the encoding, there were no more variables than those
+encoding the position at each timestep. But it is convenient to add some other
+variables, auxiliary variables, that help to memorize some useful states.
+Dynamic type variables therefore memorize the type a tile has at a given
+timestep, as it can be green, turquoise, destroyed... They are of the form
+$(x, y, t, dynamic_type)$ where in our case $dynamic_type$ can take the values
+$d_{green}$, $d_{turquoise}$ or $d_{destroyed}$. These variables must be
+initialized correctly thanks to the initial state in the level, and their value
+must be correctly updated. Therefore, for each position and timestep
+$(x, y, t)$, we have the following implications (clauses) that cover all the
+possible cases :
+\begin{equation}
+\neg(x, y, t-1, d_{turquoise}) \Rightarrow (x, y, t, d_{turquoise})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow
+					      \neg(x, y, t, d_{turquoise})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
+						  (x, y, t, d_{turquoise})
+\end{equation}
+\begin{equation}
+\neg(x, y, t-1, d_{green}) \wedge \neg(x, y, t-1, d_{turquoise}) \Rightarrow
+							\neg(x, y, t, d_{green})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow (x, y, t, d_{green})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
+						  \neg(x, y, t, d_{green})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{green}) \wedge (x, y, t-1) \Rightarrow \neg(x, y, t, d_{green})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{green}) \wedge \neg(x, y, t-1) \Rightarrow (x, y, t, d_{green})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{destroyed}) \Rightarrow (x, y, t, d_{destroyed})
+\end{equation}
+\begin{equation}
+(x, y, t-1, d_{green}) \wedge \neg(x, y, t-1) \Rightarrow
+					      (x, y, t, d_{destroyed})
+\end{equation}
+
 
 \subsubsection{The main idea of the encoding}
 The problem of deciding whether a Hex-a-Hop level can be solved can be
@@ -66,56 +118,108 @@ The main idea of the encoding into a SAT CNF formula is to use a set of main
 variables indicating the position of the player at each timestep, that is to say
 the set of three-dimensional vectors $(x, y, t)$ where $x$ is the abscissa of
 the position, $y$ the ordinate of the position and $t$ the discrete timestep.
+The next paragraphs describe the main idea of the encoding by giving the
+different type of clauses that must be added to encode the problem. We will
+explain the modifications that have to be made in order take in account more
+advanced tile types in the following section.
 
+\paragraph{The state clauses}
 Obviously, the first set of constraints (clauses) we therefore have to add are
 what we've called the {\em state clauses} :
 \begin{itemize}
 \item At each timestep, the player has to be somewhere, on a tile that is
       accessible (no water), therefore we have the clauses containing all the
-      possible positions for a given timestep t :\\
-      $\bigwedge \limits_{t=0}^{t_{max}}
-       (\bigvee \limits_{\substack{i \in [\![0, x_{max}]\!]\\
-				   j \in [\![0, y_{max}]\!]\\
-				   (x_i, y_i) \, accessible}}
-	(x_i, y_j, t))$
+      possible positions for a given timestep t :
+      \begin{equation}
+      \bigwedge \limits_{t=0}^{t_{max}}
+      (\bigvee \limits_{\substack{x \in [\![0, x_{max}]\!]\\
+				  y \in [\![0, y_{max}]\!]\\
+				  (x, y) \, accessible}}
+       (x, y, t))
+      \end{equation}
 
 \item But the player can't be at two positions at the same time, therefore we
       have all the clauses containing the negation of two different positions
-      for a given timestep t :\\
-      $\bigwedge \limits_{t=0}^{t_{max}}
-       (\bigwedge \limits_{\substack{\{(i, j), (i', j')\} \in
-				     \mathcal{P}({[\![0, x_{max}]\!] \times
-						  [\![0, y_{max}]\!]})}
-				     }
-	(\neg(x_i, y_i, t) \vee \neg(x_{i'}, y_{j'}, t)))
-       $
+      for a given timestep t :
+      \begin{equation}
+      \bigwedge \limits_{t=0}^{t_{max}}
+      (\bigwedge \limits_{\substack{\{(x, y), (x', y')\} \in
+				    \mathcal{P}({[\![0, x_{max}]\!] \times
+				    [\![0, y_{max}]\!]})}}
+       (\neg(x, y, t) \vee \neg(x', y', t)))
+      \end{equation}
 \end{itemize}
 
-\subsubsection{The dynamic type of tiles}
-In our first version of the encoding, there were no more variables than those
-encoding the position at each timestep. But it is convenient to add some other
-variables, auxiliary variables, that help to memorize some useful states.
-Dynamic type variables therefore memorize the type a tile has at a given
-timestep, as it can be green, turquoise... These variables must be initialized
-correctly thanks to the initial state in the level, and their value must be
-correctly updated. Therefore, for each position and timestep $(x, y, t)$, we
-have the following implications (clauses) that cover all the possible cases :\\
-$\neg(x, y, t-1, d_{turquoise}) \Rightarrow (x, y, t, d_{turquoise})\\
- (x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow
-					       \neg(x, y, t, d_{turquoise})\\
- (x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
-						   (x, y, t, d_{turquoise})\\
- \neg(x, y, t-1, d_{green}) \wedge \neg(x, y, t-1, d_{turquoise}) \Rightarrow
-						      \neg(x, y, t, d_{green})\\
- (x, y, t-1, d_{turquoise}) \wedge (x, y, t-1) \Rightarrow
-					       (x, y, t, d_{green})\\
- (x, y, t-1, d_{turquoise}) \wedge \neg(x, y, t-1) \Rightarrow
-						   \neg(x, y, t, d_{green})\\
- (x, y, t-1, d_{green}) \wedge (x, y, t-1) \Rightarrow
-					   \neg(x, y, t, d_{green})\\
- (x, y, t-1, d_{green}) \wedge \neg(x, y, t-1) \Rightarrow
-					       (x, y, t, d_{green})
-$
+\paragraph{The movement clauses}
+Then, we have to add clauses that are related to the movements of the player.
+This means that, for a tile that is accessible (basically isn't water), we have
+to get all the neighbour tiles that are accessible from this tile (that is to
+say, thanks to one movement). These are essentialy the tiles that are at an
+infinite-norm distance of one from the considered tile, but there are special
+cases to consider when going further in the game, as new type of tiles appear
+(this will be developed in the next section). The computation of the accessible
+neighbours is done thanks to the function {\em getAccessibleNeighbours} (and the
+auxiliary function {\em getNeighbours}). Once we have this function, we define
+the {\em movement clauses} :
+\begin{equation}
+\bigwedge \limits_{t=0}^{t_{max}-1}
+       (\bigwedge \limits_{\substack{x \in [\![0, x_{max}]\!]\\
+				     y \in [\![0, y_{max}]\!]\\
+				     (x, y) \, accessible}}
+	((x, y, t) \Rightarrow
+	 \bigvee \limits_{(x', y') \, accessible \, from \, (x, y)}
+	 (x', y', t+1)))
+\end{equation}
+
+\paragraph{The behavioral clauses}
+The tiles in a level have different behaviours that influence the movements of
+the player, typically (in the basic version) a destroyable field that is
+accessed at a given timestep mustn't have already been destroyed before. This
+gives us the {\em behavioral clauses} :
+\begin{equation}
+\bigwedge \limits_{\substack{i \in [\![0, x_{max}]\!]\\
+			     j \in [\![0, y_{max}]\!]\\
+			     (x, y) \, destroyable}}
+(\bigwedge \limits_{t=0}^{t_{max}} ((x, y, t) \Rightarrow
+				    \neg(x, y, t, d_{destroyed})))
+\end{equation}
+
+\paragraph{The start clauses}
+Let's then add a clause with a single literal that expresses the fact that the
+player must be at the starting point of the level at the timestep 0
+({\em start clauses}) :
+\begin{equation}
+(x_{start}, y_{start}, 0)
+\end{equation}
+
+\paragraph{The end clauses}
+Finally, we must add clauses related to the end of the level, that is to say in
+which conditions the level is terminated and was successfully resolved. The
+condition is rather simple : there must be no remaining green tile (in terms of
+dynamic type, as a tile that isn't initially green, like the turquoise ones, can
+become green during the exploration) at the last timestep $t_{max}$. Note that
+it is not necessary to add a clause for the tiles that aren't destroyable, like
+stone or water tiles. This gives us the {\em end clauses} :
+\begin{equation}
+\bigwedge \limits_{\substack{i \in [\![0, x_{max}]\!]\\
+			     j \in [\![0, y_{max}]\!]\\
+			     (x, y) \, destroyable}}
+\neg(x, y, t_{max}, d_{green})
+\end{equation}
+
+
+\subsubsection{Dealing with advanced tile types}
+\begin{itemize}
+\item In the case of trampolines (that appear pretty quickly in the game), you
+      have to consider all the tiles that are accessible by a sequel of jumps on
+      trampolines in a given direction, knowing that the final tile on which the
+      player lands must itself be accessible (it musn't obviously be water).
+\item In the case of high tiles of type stone that you can't access at all, you
+      must precisely not consider them as accessible. Moreover, during the
+      computation of the accessible tiles thanks to trampoline jumps, it must be
+      taken into account that the player isn't able to jump through these high
+      tiles.
+\end{itemize}
 
 
 \section{Conclusion}
