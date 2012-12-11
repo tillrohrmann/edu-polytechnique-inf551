@@ -154,7 +154,7 @@ encoding the position at each timestep. But it is convenient to add some other
 variables, auxiliary variables, that help to memorize some useful states.
 Dynamic type variables therefore memorize the type a tile has at a given
 timestep, as it can be green, turquoise, destroyed... They are of the form
-$(x, y, t, dynamic_type)$ where in our case $dynamic_type$ can take the values
+$(x, y, t, dynamic\_type)$ where in our case $dynamic\_type$ can take the values
 $d_{green}$, $d_{turquoise}$ or $d_{destroyed}$. These variables must be
 initialized correctly thanks to the initial state in the level, and their value
 must be correctly updated. Therefore, for each position and timestep
