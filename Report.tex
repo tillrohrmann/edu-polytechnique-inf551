@@ -22,7 +22,7 @@ To complete.
 
 \section{Skyscraper}
 The skyscraper game is a little logical game that works like the Sudoku game.
-Having a square grid of a fixed size, your goal is to place skyscrapers of
+Having a square grid of a fixed size $n$, the goal is to place skyscrapers of
 different heights (from 1 to the size of the grid) in the squares of the grid,
 such that a skyscraper of each height appears once and only once on each row and
 each column, and that the visibility constraints are respected. The visibility
@@ -32,7 +32,88 @@ towards the skyscraper row or column. There can also be no constraint at all for
 a given row or column side.
 
 \subsection{The encoding}
-To complete.
+In order to encode the game rules and to obtain the final result we introduced boolean variables $v_{x,y}^h$ saying whether a skyscraper of the size $h$ is on the field $(x,y)$ or not. The game rules are then realized by the following formulas:
+	\begin{itemize}
+		\item There has to be at least one skyscraper on each field
+			\begin{eqnarray}
+				\pmb{atLeastOne}&\equiv&\bigwedge_{x=0,y=0}^{n-1} \left(\bigvee_{h=0}^{n-1} v_{x,y}^h \right)
+			\end{eqnarray}
+		\item There can be at most one skyscraper on each field
+			\begin{eqnarray}
+				\pmb{atMostOne}&\equiv&\bigwedge_{x=0,y=0}^{n-1} \left( \bigwedge_{h_\not=h_2}^{n-2}\neg(v_{x,y}^{h_1} \wedge v_{x,y}^{h_2})  \right)
+			\end{eqnarray}
+		\item There can be only one skyscraper of a certain height in each row and column
+			\begin{eqnarray}
+				\pmb{oneInARow} &\equiv& \bigwedge_{x=0}^{n-1} \left( \bigwedge_{h=0}^{n-1} \left( \bigwedge_{y_1 \not = y_2}^{n-1} \neg(v_{x,y_1}^h \wedge v_{x,y_2}^h) \right) \right) \\
+				\pmb{oneInAColumn} &\equiv&  \bigwedge_{y=0}^{n-1} \left( \bigwedge_{h=0}^{n-1} \left( \bigwedge_{x_1 \not = x_2}^{n-1} \neg(v_{x_1,y}^h \wedge v_{x_2,y}^h) \right) \right)
+			\end{eqnarray}
+	\end{itemize}
+
+In order to realize the constraints, we introduced two predicates $maxSkyscraper$ and $numberSkyscraper$. The first predicate saves which is the highest skyscraper seen so far and the latter counts the number of seen skyscraper up to a given field. Let $D=\{N, E, W, S\}$ be the set of directions. $maxSkyscraper_{d}(x,y,h)$ with $d \in D$ is true iff seen from the field $(x,y)$ in the direction $d$, excluding itself, the highest skyscraper has the height $h-1$. $numberSkyscraper_{d}(x,y,n)$ with $d \in D$ is true iff one can see $n$ skyscrapers from a side in the direction of $d$ up to the field $(x,y)$. For the purpose of readibility, we are going to abbreviate $maxSkyscraper$ by $mS$ and $numberSkyscraper$ by $nS$. Regarding the predicates as functions, then they are defined by:
+	\begin{eqnarray}
+		mS_{d}(\pmb x) &=& 
+		\begin{cases}
+			height(\pmb x)+1 & height(\pmb x) \ge mS_{d}(\pmb x + \pmb e_{d})\\
+			mS_{d}(\pmb x + \pmb e_{d}) &\text{sinon}
+		\end{cases}
+		\\
+		nS_{d}(\pmb x) &=&
+		\begin{cases}
+			nS_{d}(\pmb x - \pmb e_{d}) + 1 & height(\pmb x) \ge mS_{d}(\pmb x)\\
+			nS_{d}(\pmb x - \pmb e_{d}) &\text{sinon}
+		\end{cases}
+	\end{eqnarray}
+with $\pmb e_{N} = (-1,0)^T, \pmb e_{E} = (0,1)^T, \pmb e_{S} = (1,0)^T,\pmb e_{W} = (0,-1)^T$ and $\pmb x = (x,y)^T$ being the position vector. Moreover, we set the $mS_{d}$ predicate on the respective side to $0$ and the $nS_{d}$ predicate to $1$. The behaviour of $mS$ is modelled by the following formulas:
+\begin{itemize}
+	\item $mS$ can take only at most one value
+	\begin{eqnarray}
+		\pmb{mSisAFunction} &\equiv& \bigwedge_{d\in D} \left( \bigwedge_{x=0,y=0}^{n-1} \left( \bigwedge_{v_1 \not = v_2} \neg \left( mS_{d}(x,y,v_1) \wedge mS_{d}(x,y,v_2) \right) \right) \right)
+	\end{eqnarray}
+	\item Set $mS$ on the borders to zero
+	\begin{eqnarray}
+		\pmb{mStoZero} &\equiv& \bigwedge_{x=0}^{n-1} mS_{N}(0,x,0) \wedge mS_{E}(x,n-1,0) \wedge \nonumber \\
+	&&  mS_{S}(n-1,x,0) \wedge mS_{W}(x,0,0)
+	\end{eqnarray}
+	\item Value propagation if the skyscraper on the field is smaller than $mS$.
+	\begin{eqnarray}
+		\pmb{mSvPropC} &\equiv& \bigwedge_{d \in D,x=0,y=0} \bigwedge_{h_1=0}^{n-1} \bigwedge_{h_2 = h_1+1}^{n} \left( v_{x,y}^{h_1} \wedge mS_{d}(\pmb x + \pmb e_{d},h_2) \Rightarrow mS_{d}(\pmb x,h_2) \right)
+	\end{eqnarray}
+	\item Value propagation if the skyscraper on the field is greater or equal than $mS$.
+	\begin{eqnarray}
+		\pmb{mSvPropAug} &\equiv& \bigwedge_{d \in D,x=0,y=0} \bigwedge_{h_1=0}^{n-1} \bigwedge_{h_2=h_1}^{n-1} \left( v_{x,y}^{h_2} \wedge mS_{d}(\pmb x + \pmb e_{d},h_1) \Rightarrow mS_{d}(\pmb x,h_2+1) \right)
+	\end{eqnarray}
+\end{itemize}
+
+The behaviour of $nS$ is given by:
+\begin{itemize}
+	
+\item $nS$ can take only at most one value
+	\begin{eqnarray}
+		\pmb{nSisAFunction} &\equiv& \bigwedge_{d\in D} \left( \bigwedge_{x=0,y=0}^{n-1} \left( \bigwedge_{v_1 \not = v_2} \neg \left( nS_{d}(x,y,v_1) \wedge nS_{d}(x,y,v_2) \right) \right) \right)
+	\end{eqnarray}
+	
+\item Set $nS$ on the border to one
+	\begin{eqnarray}
+		\pmb{nStoOne} &\equiv& \bigwedge_{x=0}^{n-1} nS_{N}(n-1,x,1) \wedge nS_{E}(x,0,1) \wedge \nonumber \\
+	&&  nS_{S}(0,x,1) \wedge nS_{W}(x,n-1,1)
+	\end{eqnarray}
+	
+\item Value propagation if the skyscraper on the field is smaller than $mS$
+	\begin{eqnarray}
+		\pmb{nSvPropC} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}+1\\h_{3}=0}}^{n} \left( v_{x,y}^{h_1} \wedge mS_d(\pmb x,h_2) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right)
+	\end{eqnarray}
+	with $d^{-1}$ being the inverse direction.
+
+	\item Value propagation if the skyscraper is greater or equal than $mS$
+	\begin{eqnarray}
+		\pmb{nSvPropAug} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}\\h_{3}=0}}^{n} \left( v_{x,y}^{h_2} \wedge mS_d(\pmb x,h_1) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3+1) \right)
+	\end{eqnarray}
+\end{itemize}
+
+Since all of these formulas are already in CNF form there is no transformation needed. In the last step, the constraints will be specified. This can be easily achieved by constraining the $nS$ at the respective positions to be true for the constraint values. For example, assuming that we have the constraint $c$ for the first line on the left side, then it would be realized by adding $nS_{E}(0,n-1,c)$ as a new clause.
+
 
 \subsection{How to use the program}
 To complete.
