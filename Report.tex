@@ -21,7 +21,7 @@ Nowadays, computers became a powerful tool to help us humans in a variety of way
 We humans only have to describe the problem in such a way that the computer can understand it and process it.
 Instead of developing for every issue a proprietary solution it is often more efficient to use existing tools which are well understood and efficiently implemented.
 One of these general problems is SAT for which plenty of solvers have already been developed.
-Thus, one only has to find a reduction from the original problem to a boolean formula which one then tries to solve.
+Thus, one only has to find a reduction from the original problem to a Boolean formula which one then tries to solve.
 In the context of this work we investigate the applicability of such a reduction for the two games Skyscraper and Hex-a-Hop and evaluate the results.
 
 In the first section we present the game Skyscraper and describe its reduction to a SAT problem.
@@ -39,7 +39,7 @@ towards the skyscraper row or column. There can also be no constraint at all for
 a given row or column side.
 
 \subsection{The encoding}
-In order to encode the game rules and to obtain the final result we introduced boolean variables $v_{x,y}^h$ saying whether a skyscraper of the size $h$ is on the field $(x,y)$ or not. The game rules are then realized by the following formulas:
+In order to encode the game rules and to obtain the final result we introduced Boolean variables $v_{x,y}^h$ saying whether a skyscraper of the size $h$ is on the field $(x,y)$ or not. The game rules are then realized by the following formulas:
 	\begin{itemize}
 		\item There has to be at least one skyscraper on each field
 			\begin{eqnarray}
@@ -56,12 +56,12 @@ In order to encode the game rules and to obtain the final result we introduced b
 			\end{eqnarray}
 	\end{itemize}
 
-In order to realize the constraints, we introduced two predicates $maxSkyscraper$ and $numberSkyscraper$. The first predicate saves which is the highest skyscraper seen so far and the latter counts the number of seen skyscraper up to a given field. Let $D=\{N, E, W, S\}$ be the set of directions. $maxSkyscraper_{d}(x,y,h)$ with $d \in D$ is true iff seen from the field $(x,y)$ in the direction $d$, excluding itself, the highest skyscraper has the height $h-1$. $numberSkyscraper_{d}(x,y,n)$ with $d \in D$ is true iff one can see $n$ skyscrapers from a side in the direction of $d$ up to the field $(x,y)$. For the purpose of readibility, we are going to abbreviate $maxSkyscraper$ by $mS$ and $numberSkyscraper$ by $nS$. Regarding the predicates as functions, then they are defined by:
+In order to realize the constraints, we introduced two predicates $maxSkyscraper$ and $numberSkyscraper$. The first predicate saves which is the highest skyscraper seen so far and the latter counts the number of seen skyscraper up to a given field. Let $D=\{N, E, W, S\}$ be the set of directions. $maxSkyscraper_{d}(x,y,h)$ with $d \in D$ is true iff seen from the field $(x,y)$ in the direction $d$, excluding itself, the highest skyscraper has the height $h-1$. $numberSkyscraper_{d}(x,y,n)$ with $d \in D$ is true iff one can see $n$ skyscrapers from a side in the direction of $d$ up to the field $(x,y)$. For the purpose of readability, we are going to abbreviate $maxSkyscraper$ by $mS$ and $numberSkyscraper$ by $nS$. Regarding the predicates as functions, then they are defined by:
 	\begin{eqnarray}
 		mS_{d}(\pmb x) &=& 
 		\begin{cases}
 			height(\pmb x)+1 & height(\pmb x) \ge mS_{d}(\pmb x + \pmb e_{d})\\
-			mS_{d}(\pmb x + \pmb e_{d}) &\text{sinon}
+			mS_{d}(\pmb x + \pmb e_{d}) &\text{if not}
 		\end{cases}
 		\\
 		nS_{d}(\pmb x) &=&
@@ -70,7 +70,7 @@ In order to realize the constraints, we introduced two predicates $maxSkyscraper
 			nS_{d}(\pmb x - \pmb e_{d}) &\text{sinon}
 		\end{cases}
 	\end{eqnarray}
-with $\pmb e_{N} = (-1,0)^T, \pmb e_{E} = (0,1)^T, \pmb e_{S} = (1,0)^T,\pmb e_{W} = (0,-1)^T$ and $\pmb x = (x,y)^T$ being the position vector. Moreover, we set the $mS_{d}$ predicate on the respective side to $0$ and the $nS_{d}$ predicate to $1$. The behaviour of $mS$ is modelled by the following formulas:
+with $\pmb e_{N} = (-1,0)^T, \pmb e_{E} = (0,1)^T, \pmb e_{S} = (1,0)^T,\pmb e_{W} = (0,-1)^T$ and $\pmb x = (x,y)^T$ being the position vector. Moreover, we set the $mS_{d}$ predicate on the respective side to $0$ and the $nS_{d}$ predicate to $1$. The behavior of $mS$ is modeled by the following formulas:
 \begin{itemize}
 	\item $mS$ can take only at most one value
 	\begin{eqnarray}
@@ -91,7 +91,7 @@ with $\pmb e_{N} = (-1,0)^T, \pmb e_{E} = (0,1)^T, \pmb e_{S} = (1,0)^T,\pmb e_{
 	\end{eqnarray}
 \end{itemize}
 
-The behaviour of $nS$ is given by:
+The behavior of $nS$ is given by:
 \begin{itemize}
 	
 \item $nS$ can take only at most one value
@@ -128,7 +128,7 @@ It is noteworthy that by introducing the two additional predicates, we have achi
 With our encoding we could solve all levels within a fraction of a second. Even the levels, where not all constraints were specified, did not pose a problem to our encoding. The produced results were verified by inserting them into the game. However, one has to admit that due to the lack of dynamic the encoding is rather simple and does not require many variables. Thus, it is easy to solve for up to date SAT solvers.
 
 \subsection{How to use the program}
-The encoding is realized by the python program encoding.py. The only prerequisite to run the program is an installed python version. The program awaits an input file which specifies the field and the constraints. The first line contains the side length $n$ of the field. It is followed by $2\cdot n$ pairs of numbers, separated by a whitespace, specifying the constraints. The range for the constraints is $[0,\ldots,n]$ whereby $0$ denotes that there is no constraint. The first $n$ pairs specify the constraints for the lines, the first number indicating the left and the second number indicating the right constraint. The last $n$ pairs specify the column constraints, the first number indicating the top and the second number indicating the bottom constraint. The program outputs the encoding in the DIMACS format to the standard output and can thus be easily given to a third-party SAT solver capable of reading the DIMACS format.
+The encoding is realized by the python program encoding.py. The only prerequisite to run the program is an installed python version. The program awaits an input file which specifies the field and the constraints. The first line contains the side length $n$ of the field. It is followed by $2\cdot n$ pairs of numbers, separated by a white space, specifying the constraints. The range for the constraints is $[0,\ldots,n]$ whereby $0$ denotes that there is no constraint. The first $n$ pairs specify the constraints for the lines, the first number indicating the left and the second number indicating the right constraint. The last $n$ pairs specify the column constraints, the first number indicating the top and the second number indicating the bottom constraint. The program outputs the encoding in the DIMACS format to the standard output and can thus be easily given to a third-party SAT solver capable of reading the DIMACS format.
 
 We used the Glucose SAT solver for our project because it could solve sufficiently fast our problems. But any other SAT solver can be used as well.
 
@@ -143,7 +143,7 @@ Hex-a-Hop is a puzzle-based game with hundred levels where the player jumps from
 one hexagonal tile to another. The goal, for each level, is to destroy all the
 green tiles by visiting them once, without getting trapped or falling into the
 water. The levels gradually become more and more difficult, unveiling more and
-more new tile types having different behaviours (trampolines, high tiles...).
+more new tile types having different behaviors (trampolines, high tiles...).
 
 \subsection{The encoding}
 
@@ -162,14 +162,14 @@ movement to do on the grid when moving in a given direction).
 
 \subsubsection{The dynamic type of tiles}
 In our first version of the encoding, there were no more variables than those
-encoding the position at each timestep. But it is convenient to add some other
+encoding the position at each time step. But it is convenient to add some other
 variables, auxiliary variables, that help to memorize some useful states.
 Dynamic type variables therefore memorize the type a tile has at a given
-timestep, as it can be green, turquoise, destroyed... They are of the form
+time step, as it can be green, turquoise, destroyed... They are of the form
 $(x, y, t, dynamic\_type)$ where in our case $dynamic\_type$ can take the values
 $d_{green}$, $d_{turquoise}$ or $d_{destroyed}$. These variables must be
 initialized correctly thanks to the initial state in the level, and their value
-must be correctly updated. Therefore, for each position and timestep
+must be correctly updated. Therefore, for each position and time step
 $(x, y, t)$, we have the following implications (clauses) that cover all the
 possible cases :
 \begin{equation}
@@ -214,9 +214,9 @@ The problem of deciding whether a Hex-a-Hop level can be solved can be
 transformed into the parameterized problem of deciding whether a Hex-a-Hop level
 can be solved in a given number of steps.
 The main idea of the encoding into a SAT CNF formula is to use a set of main
-variables indicating the position of the player at each timestep, that is to say
+variables indicating the position of the player at each time step, that is to say
 the set of three-dimensional vectors $(x, y, t)$ where $x$ is the abscissa of
-the position, $y$ the ordinate of the position and $t$ the discrete timestep.
+the position, $y$ the ordinate of the position and $t$ the discrete time step.
 The next paragraphs describe the main idea of the encoding by giving the
 different type of clauses that must be added to encode the problem. We will
 explain the modifications that have to be made in order take in account more
@@ -226,9 +226,9 @@ advanced tile types in the following section.
 Obviously, the first set of constraints (clauses) we therefore have to add are
 what we've called the {\em state clauses} :
 \begin{itemize}
-\item At each timestep, the player has to be somewhere, on a tile that is
+\item At each time step, the player has to be somewhere, on a tile that is
       accessible (no water), therefore we have the clauses containing all the
-      possible positions for a given timestep t :
+      possible positions for a given time step t :
       \begin{equation}
       \bigwedge \limits_{t=0}^{t_{max}}
       (\bigvee \limits_{\substack{x \in [\![0, x_{max}]\!]\\
@@ -239,7 +239,7 @@ what we've called the {\em state clauses} :
 
 \item But the player can't be at two positions at the same time, therefore we
       have all the clauses containing the negation of two different positions
-      for a given timestep t :
+      for a given time step t :
       \begin{equation}
       \bigwedge \limits_{t=0}^{t_{max}}
       (\bigwedge \limits_{\substack{\{(x, y), (x', y')\} \in
@@ -252,12 +252,12 @@ what we've called the {\em state clauses} :
 \paragraph{The movement clauses}
 Then, we have to add clauses that are related to the movements of the player.
 This means that, for a tile that is accessible (basically isn't water), we have
-to get all the neighbour tiles that are accessible from this tile (that is to
-say, thanks to one movement). These are essentialy the tiles that are at an
+to get all the neighbor tiles that are accessible from this tile (that is to
+say, thanks to one movement). These are essentially the tiles that are at an
 infinite-norm distance of one from the considered tile, but there are special
 cases to consider when going further in the game, as new type of tiles appear
 (this will be developed in the next section). The computation of the accessible
-neighbours is done thanks to the function {\em getAccessibleNeighbours} (and the
+neighbors is done thanks to the function {\em getAccessibleNeighbours} (and the
 auxiliary function {\em getNeighbours}). Once we have this function, we define
 the {\em movement clauses} :
 \begin{equation}
@@ -271,9 +271,9 @@ the {\em movement clauses} :
 \end{equation}
 
 \paragraph{The behavioral clauses}
-The tiles in a level have different behaviours that influence the movements of
+The tiles in a level have different behaviors that influence the movements of
 the player, typically (in the basic version) a destroyable field that is
-accessed at a given timestep mustn't have already been destroyed before. This
+accessed at a given time step mustn't have already been destroyed before. This
 gives us the {\em behavioral clauses} :
 \begin{equation}
 \bigwedge \limits_{\substack{i \in [\![0, x_{max}]\!]\\
@@ -285,7 +285,7 @@ gives us the {\em behavioral clauses} :
 
 \paragraph{The start clauses}
 Let's then add a clause with a single literal that expresses the fact that the
-player must be at the starting point of the level at the timestep 0
+player must be at the starting point of the level at the time step 0
 ({\em start clauses}) :
 \begin{equation}
 (x_{start}, y_{start}, 0)
@@ -296,7 +296,7 @@ Finally, we must add clauses related to the end of the level, that is to say in
 which conditions the level is terminated and was successfully resolved. The
 condition is rather simple : there must be no remaining green tile (in terms of
 dynamic type, as a tile that isn't initially green, like the turquoise ones, can
-become green during the exploration) at the last timestep $t_{max}$. Note that
+become green during the exploration) at the last time step $t_{max}$. Note that
 it is not necessary to add a clause for the tiles that aren't destroyable, like
 stone or water tiles. This gives us the {\em end clauses} :
 \begin{equation}
@@ -308,11 +308,11 @@ stone or water tiles. This gives us the {\em end clauses} :
 
 
 \subsubsection{Dealing with advanced tile types}
-The two kind of {\em advanced} tiles that we have treaten are trampolines, that
+The two kind of {\em advanced} tiles that we have treated are trampolines, that
 appear pretty quickly in the game, and high tiles, that is to say tiles of a
 given type (stone, green or turquoise) that are higher than the normal height of
 tiles. High tiles of a destroyable type (green or turquoise) have a special
-behaviour : all the high tiles of a given destroyable type sink down if all the
+behavior : all the high tiles of a given destroyable type sink down if all the
 low tiles of the same type have been destroyed. Naturally, to finish a level,
 all the low as well as all the high green tiles must be destroyed.
 
@@ -331,7 +331,7 @@ modified is the {\em getAccessibleNeighbours} function :
 \end{itemize}
 
 In our encoding, we consider that when the player does a sequel of jumps on
-trampolines, he directly accesses the final tile at the timestep at which he
+trampolines, he directly accesses the final tile at the time step at which he
 accessed the first trampoline, without considering that the player spent time
 "in the air" while jumping (this is justified by the fact that it takes just one
 step to go to the first trampoline). This is a problem when it comes to high
@@ -339,8 +339,8 @@ stones, as they can perfectly sink down during the time the player jumps from a
 trampoline to another tile. To fix that, the fact that a trampoline was accessed
 must be remembered thanks to a variable. Therefore we have the {\em trampoline
 variables} of the form $trampoline_t$ indicating whether or not a trampoline was
-accessed at timestep t. The only clauses to add for them are with the
-{\em movement clauses} : if coming from the position $(x, y)$ at timestep t we
+accessed at time step t. The only clauses to add for them are with the
+{\em movement clauses} : if coming from the position $(x, y)$ at time step t we
 used a trampoline (the infinite-norm distance traveled is greater than 1) to
 land on the tile at position $(x', y')$, we have the following implication :
 \begin{equation}
@@ -405,7 +405,7 @@ In order to simplify the execution chain of programs, we also supply the script 
 The input file starts with a pair of integers indicating the start row and the start column of the player on the map. 
 All following lines define the map. 
 Each line consists of a sequence of symbols representing the tile types. 
-At the moment the following types are supported: \pmb g - Green tile, \pmb s - Stone tile, \pmb t - Turquois tile, \pmb W - water tile, \pmb j - Trampoline tile. 
+At the moment the following types are supported: \pmb g - Green tile, \pmb s - Stone tile, \pmb t - Turquoise tile, \pmb W - water tile, \pmb j - Trampoline tile. 
 For the first three symbols there exist also the capital letter version which denotes that this is a high tile. 
 In order to make the map description better readable for humans, all letters have to be separated by a white space. 
 Moreover, every odd line has to be shifted by one character to the left. 
@@ -419,7 +419,7 @@ s G g
  s g
   g	
 \end{verbatim}
-It is noteworthy that the row and column number starts counting at 0 and that every row and column, even though it might contain a whitespace, is counted.
+It is noteworthy that the row and column number starts counting at 0 and that every row and column, even though it might contain a white space, is counted.
 
 
 \section{Conclusion}
@@ -427,6 +427,6 @@ It is noteworthy that the row and column number starts counting at 0 and that ev
 As we have shown in the context of this work, it is possible to solve the games Skyscraper and parts of Hex-a-Hop by reducing them to a SAT problem which then can be efficiently solved by a solver. 
 For both problems we have found a polynomial reduction algorithm.
 However, we also found out that the encoding of the slightly more complex game Hex-a-Hop produces quickly a huge amount of clauses and variables which can pose a serious challenge for current SAT solvers.
-Nevertheless, this is only a question of computing resources and algorithmic techniques and thus only a practical problem.
+Nevertheless, this is only a question of computing resources and algorithmic techniques and thus only a practical problem and not a fundamental.
 
 \end{document}
