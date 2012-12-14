@@ -308,17 +308,55 @@ stone or water tiles. This gives us the {\em end clauses} :
 
 
 \subsubsection{Dealing with advanced tile types}
+The two kind of {\em advanced} tiles that we have treaten are trampolines, that
+appear pretty quickly in the game, and high tiles, that is to say tiles of a
+given type (stone, green or turquoise) that are higher than the normal height of
+tiles. High tiles of a destroyable type (green or turquoise) have a special
+behaviour : all the high tiles of a given destroyable type sink down if all the
+low tiles of the same type have been destroyed. Naturally, to finish a level,
+all the low as well as all the high green tiles must be destroyed.
+
+To take this new type of tiles into account, the first thing that must be
+modified is the {\em getAccessibleNeighbours} function :
 \begin{itemize}
-\item In the case of trampolines (that appear pretty quickly in the game), you
-      have to consider all the tiles that are accessible by a sequel of jumps on
-      trampolines in a given direction, knowing that the final tile on which the
-      player lands must itself be accessible (it musn't obviously be water).
+\item In the case of trampolines, you have to consider all the tiles that are
+      accessible by a sequel of jumps on trampolines in a given direction,
+      knowing that the final tile on which the player lands must itself be
+      accessible (it mustn't obviously be water).
 \item In the case of high tiles of type stone that you can't access at all, you
       must precisely not consider them as accessible. Moreover, during the
       computation of the accessible tiles thanks to trampoline jumps, it must be
       taken into account that the player isn't able to jump through these high
       tiles.
 \end{itemize}
+
+In our encoding, we consider that when the player does a sequel of jumps on
+trampolines, he directly accesses the final tile at the timestep at which he
+accessed the first trampoline, without considering that the player spent time
+"in the air" while jumping (this is justified by the fact that it takes just one
+step to go to the first trampoline). This is a problem when it comes to high
+stones, as they can perfectly sink down during the time the player jumps from a
+trampoline to another tile. To fix that, the fact that a trampoline was accessed
+must be remembered thanks to a variable. Therefore we have the {\em trampoline
+variables} of the form $trampoline_t$ indicating whether or not a trampoline was
+accessed at timestep t. The only clauses to add for them are with the
+{\em movement clauses} : if coming from the position $(x, y)$ at timestep t we
+used a trampoline (the infinite-norm distance traveled is greater than 1) to
+land on the tile at position $(x', y')$, we have the following implication :
+\begin{equation}
+(x, y, t) \wedge (x', y', t+1) \Rightarrow trampoline_t
+\end{equation}
+Else, if we landed on the tile at position $(x', y')$ without using a
+trampoline, then we have to add this implication :
+\begin{equation}
+(x, y, t) \wedge (x', y', t+1) \Rightarrow \neg trampoline_t
+\end{equation}
+
+To handle the case of high destroyable tiles, we introduced a new set of
+variables indicating if all the low tiles of a given type have been destroyed,
+and therefore all the high tiles have sunk down ({\em type height variables}).
+Therefore, such kind of tile
+
 
 \subsection{How to use the program}
 
@@ -360,6 +398,7 @@ s G g
   g	
 \end{verbatim}
 It is noteworthy that the row and column number starts counting at 0 and that every row and column, even though it might contain a whitespace, is counted.
+
 
 \section{Conclusion}
 
