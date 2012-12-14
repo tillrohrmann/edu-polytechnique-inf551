@@ -17,8 +17,15 @@ Mini-project - Encoding funny games into SAT\\
 
 
 \section{Introduction}
-To complete.
+Nowadays, computers became a powerful tool to help us humans in a variety of ways.
+We humans only have to describe the problem in such a way that the computer can understand it and process it.
+Instead of developing for every issue a proprietary solution it is often more efficient to use existing tools which are well understood and efficiently implemented.
+One of these general problems is SAT for which plenty of solvers have already been developed.
+Thus, one only has to find a reduction from the original problem to a boolean formula which one then tries to solve.
+In the context of this work we investigate the applicability of such a reduction for the two games Skyscraper and Hex-a-Hop and evaluate the results.
 
+In the first section we present the game Skyscraper and describe its reduction to a SAT problem.
+In the second section we do the same for the game Hex-a-Hop.
 
 \section{Skyscraper}
 The skyscraper game is a little logical game that works like the Sudoku game.
@@ -114,6 +121,11 @@ The behaviour of $nS$ is given by:
 
 Since all of these formulas are already in CNF form there is no transformation needed. In the last step, the constraints will be specified. This can be easily achieved by constraining the $nS$ at the respective positions to be true for the constraint values. For example, assuming that we have the constraint $c$ for the first line on the left side, then it would be realized by adding $nS_{E}(0,n-1,c)$ as a new clause.
 
+It is noteworthy that by introducing the two additional predicates, we have achieved a polynomial SAT reduction in the size of the field side length $n$. In order to encode the field with the different skyscrapers we need $n^3$ variables. For the two predicates another $2\cdot n^2\cdot(n+1)$ variables are required. Thus the complexity of our encoding is in $O(n^3)$.
+
+\subsection{Evaluation}
+
+With our encoding we could solve all levels within a fraction of a second. Even the levels, where not all constraints were specified, did not pose a problem to our encoding. The produced results were verified by inserting them into the game. However, one has to admit that due to the lack of dynamic the encoding is rather simple and does not require many variables. Thus, it is easy to solve for up to date SAT solvers.
 
 \subsection{How to use the program}
 The encoding is realized by the python program encoding.py. The only prerequisite to run the program is an installed python version. The program awaits an input file which specifies the field and the constraints. The first line contains the side length $n$ of the field. It is followed by $2\cdot n$ pairs of numbers, separated by a whitespace, specifying the constraints. The range for the constraints is $[0,\ldots,n]$ whereby $0$ denotes that there is no constraint. The first $n$ pairs specify the constraints for the lines, the first number indicating the left and the second number indicating the right constraint. The last $n$ pairs specify the column constraints, the first number indicating the top and the second number indicating the bottom constraint. The program outputs the encoding in the DIMACS format to the standard output and can thus be easily given to a third-party SAT solver capable of reading the DIMACS format.
@@ -122,7 +134,7 @@ We used the Glucose SAT solver for our project because it could solve sufficient
 
 The output of the SAT solver can be visualized by the python program decoding.py. The program expects as input arguments the file defining the field and the model calculated by the SAT solver. Given that, it will print the placement of the skyscraper on the field for the given constraints.
 
-For the sake of simplicity, we recommend to use the script skyscraper.sh which takes as single argument the field file and combines all of the aforementioned steps. The only thing one has to adapt is the path to the SAT solver.
+For the sake of simplicity, we recommend to use the script \emph{skyscraper.sh} which takes as single argument the field file and combines all of the aforementioned steps. The only thing one has to adapt is the path to the SAT solver.
 
 
 
@@ -346,7 +358,53 @@ and therefore all the high tiles have sunk down ({\em type height variables}).
 Therefore, such kind of tile
 
 
+\subsection{How to use the program}
+
+The encoding program was realized in OCaml due to performance reasons. 
+The program is called encoder. 
+It can be easily build by executing the build.sh script. 
+The only requirement is a working OCaml environment. 
+To run the program one has to pass three arguments to the executable: path to an input file specifying the map and the starting point, the number of steps for which a solution shall be searched and the path to the output file of the encoding. 
+It is important to note that the number of steps defines exactly the number of steps the player has to do in a possible solution. 
+That implies that the program will not find a solution which consists of more or less steps. 
+The output file will have the DIMACS format. 
+Thus, all SAT solvers which support it can be employed. 
+The format of the input file will be described in the next section.
+
+The decoding of the result file and the visualization of the solution is done by the python program decoder.py. 
+It takes as input parameters the input file describing the map the file with the model generated by the SAT solver and the number of steps of the solution. 
+It will then present step by step the path of the solution. 
+The only requirement to run the program is a working python environment. 
+
+In order to simplify the execution chain of programs, we also supply the script \emph{hah.sh} which automatically chains all the execution steps necessary to calculate and display the found solution. The input arguments are the input file describing the map and two integers describing the range of steps for which a solution shall be searched. The only thing to adjust is the path to the SAT solver.
+
+\subsubsection{Input file}
+
+The input file starts with a pair of integers indicating the start row and the start column of the player on the map. 
+All following lines define the map. 
+Each line consists of a sequence of symbols representing the tile types. 
+At the moment the following types are supported: \pmb g - Green tile, \pmb s - Stone tile, \pmb t - Turquois tile, \pmb W - water tile, \pmb j - Trampoline tile. 
+For the first three symbols there exist also the capital letter version which denotes that this is a high tile. 
+In order to make the map description better readable for humans, all letters have to be separated by a white space. 
+Moreover, every odd line has to be shifted by one character to the left. 
+That way, one can imitate the hexagonal structure of the field. 
+The following example illustrates the explanation:
+\begin{verbatim}
+2 0
+  g
+ g g
+s G g
+ s g
+  g	
+\end{verbatim}
+It is noteworthy that the row and column number starts counting at 0 and that every row and column, even though it might contain a whitespace, is counted.
+
+
 \section{Conclusion}
-To complete.
+
+As we have shown in the context of this work, it is possible to solve the games Skyscraper and parts of Hex-a-Hop by reducing them to a SAT problem which then can be efficiently solved by a solver. 
+For both problems we have found a polynomial reduction algorithm.
+However, we also found out that the encoding of the slightly more complex game Hex-a-Hop produces quickly a huge amount of clauses and variables which can pose a serious challenge for current SAT solvers.
+Nevertheless, this is only a question of computing resources and algorithmic techniques and thus only a practical problem.
 
 \end{document}
