@@ -355,7 +355,29 @@ trampoline, then we have to add this implication :
 To handle the case of high destroyable tiles, we introduced a new set of
 variables indicating if all the low tiles of a given type have been destroyed,
 and therefore all the high tiles have sunk down ({\em type height variables}).
-Therefore, such kind of tile
+In fact, for our case, there are just two of them, $(h_{green}, t)$ and
+$(h_{turquoise}, t)$ at a given timestep $t$. Therefore, a high destroyable
+tile of type $type$ at the position $(x, y)$ can only be accessed at the
+timestep $t$ if the corresponding variable was already true at the previous
+timestep if no trampoline was used, or true at the timestep $t$ if a trampoline
+was used (as the tiles sink down while jumping), which gives us these clauses :
+\begin{equation}
+((x, y, t) \wedge trampoline_{t-1} \Rightarrow (h_{type}, t))
+\wedge
+((x, y, t) \wedge \neg trampoline_{t-1} \Rightarrow (h_{type}, t-1))
+\end{equation}
+
+Now we must be sure that the {\em type height variables} have the right value by
+adding clauses related to the sinking conditions of high tiles. In fact, at a
+timestep $t$, high tiles of a given type $type$ are sunk down if it already was
+the case at the previous timestep or if there was no low tile having the same
+dynamic type $type$ remaining at the previous timestep :
+\begin{equation}
+\bigwedge \limits_{\substack{i \in [\![0, x_{max}]\!]\\
+			     j \in [\![0, y_{max}]\!]\\
+			     (x, y) \, not \, high \, of \, type \, type}}
+((d_{type}, t) \Rightarrow (d_{type}, t-1) \vee \neg(x, y, t-1, d_{green}))
+\end{equation}
 
 
 \subsection{How to use the program}
