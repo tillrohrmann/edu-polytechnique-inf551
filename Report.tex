@@ -107,15 +107,15 @@ The behavior of $nS$ is given by:
 	
 \item Value propagation if the skyscraper on the field is smaller than $mS$
 	\begin{eqnarray}
-		\pmb{nSvPropC} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}+1\\h_{3}=0}}^{n} \left( v_{x,y}^{h_1} \wedge mS_d(\pmb x,h_2) \wedge nS_{d^{-1}}(\pmb x,h_3) \right. \nonumber \\
-	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right)
+		\pmb{nSvPropC} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}+1\\h_{3}=0}}^{n} \left( v_{x,y}^{h_1} \wedge mS_d(\pmb x,h_2) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x,h_3) \right)
 	\end{eqnarray}
 	with $d^{-1}$ being the inverse direction.
 
 	\item Value propagation if the skyscraper is greater or equal than $mS$
 	\begin{eqnarray}
-		\pmb{nSvPropAug} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}\\h_{3}=0}}^{n} \left( v_{x,y}^{h_2} \wedge mS_d(\pmb x,h_1) \wedge nS_{d^{-1}}(\pmb x,h_3) \right. \nonumber \\
-	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3+1) \right)
+		\pmb{nSvPropAug} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}\\h_{3}=0}}^{n} \left( v_{x,y}^{h_2} \wedge mS_d(\pmb x,h_1) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x,h_3+1) \right)
 	\end{eqnarray}
 \end{itemize}
 
