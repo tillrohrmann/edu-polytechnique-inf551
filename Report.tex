@@ -47,7 +47,7 @@ In order to encode the game rules and to obtain the final result we introduced B
 			\end{eqnarray}
 		\item There can be at most one skyscraper on each field
 			\begin{eqnarray}
-				\pmb{atMostOne}&\equiv&\bigwedge_{x=0,y=0}^{n-1} \left( \bigwedge_{h_\not=h_2}^{n-2}\neg(v_{x,y}^{h_1} \wedge v_{x,y}^{h_2})  \right)
+				\pmb{atMostOne}&\equiv&\bigwedge_{x=0,y=0}^{n-1} \left( \bigwedge_{h_1\not=h_2}^{n-2}\neg(v_{x,y}^{h_1} \wedge v_{x,y}^{h_2})  \right)
 			\end{eqnarray}
 		\item There can be only one skyscraper of a certain height in each row and column
 			\begin{eqnarray}
@@ -67,7 +67,7 @@ In order to realize the constraints, we introduced two predicates $maxSkyscraper
 		nS_{d}(\pmb x) &=&
 		\begin{cases}
 			nS_{d}(\pmb x - \pmb e_{d}) + 1 & height(\pmb x) \ge mS_{d}(\pmb x)\\
-			nS_{d}(\pmb x - \pmb e_{d}) &\text{sinon}
+			nS_{d}(\pmb x - \pmb e_{d}) &\text{if not}
 		\end{cases}
 	\end{eqnarray}
 with $\pmb e_{N} = (-1,0)^T, \pmb e_{E} = (0,1)^T, \pmb e_{S} = (1,0)^T,\pmb e_{W} = (0,-1)^T$ and $\pmb x = (x,y)^T$ being the position vector. Moreover, we set the $mS_{d}$ predicate on the respective side to $0$ and the $nS_{d}$ predicate to $1$. The behavior of $mS$ is modeled by the following formulas:
@@ -107,14 +107,14 @@ The behavior of $nS$ is given by:
 	
 \item Value propagation if the skyscraper on the field is smaller than $mS$
 	\begin{eqnarray}
-		\pmb{nSvPropC} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}+1\\h_{3}=0}}^{n} \left( v_{x,y}^{h_1} \wedge mS_d(\pmb x,h_2) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+		\pmb{nSvPropC} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}+1\\h_{3}=0}}^{n} \left( v_{x,y}^{h_1} \wedge mS_d(\pmb x,h_2) \wedge nS_{d^{-1}}(\pmb x,h_3) \right. \nonumber \\
 	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right)
 	\end{eqnarray}
 	with $d^{-1}$ being the inverse direction.
 
 	\item Value propagation if the skyscraper is greater or equal than $mS$
 	\begin{eqnarray}
-		\pmb{nSvPropAug} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}\\h_{3}=0}}^{n} \left( v_{x,y}^{h_2} \wedge mS_d(\pmb x,h_1) \wedge nS_{d^{-1}}(\pmb x - \pmb e_d,h_3) \right. \nonumber \\
+		\pmb{nSvPropAug} &\equiv& \bigwedge_{\substack{d\in D\\x=0\\y=0}} \bigwedge_{h_{1}=0}^{n-1} \bigwedge_{\substack{h_{2} = h_{1}\\h_{3}=0}}^{n} \left( v_{x,y}^{h_2} \wedge mS_d(\pmb x,h_1) \wedge nS_{d^{-1}}(\pmb x,h_3) \right. \nonumber \\
 	&& \left.\Rightarrow nS_{d^{-1}}(\pmb x - \pmb e_d,h_3+1) \right)
 	\end{eqnarray}
 \end{itemize}
