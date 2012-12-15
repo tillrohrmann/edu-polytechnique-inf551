@@ -369,13 +369,13 @@ the tiles sink down while jumping), which gives us these clauses :
 Now we must be sure that the {\em type height variables} have the right value by
 adding clauses related to the sinking conditions of high tiles. In fact, at a
 time step $t$, high tiles of a given type $type$ are sunk down if it already was
-the case at the previous time step or if there was no low tile having the same
-dynamic type $type$ remaining at the previous time step :
+the case at the previous time step or if there is no low tile having the same
+dynamic type $type$ remaining at the current time step :
 \begin{equation}
 \bigwedge \limits_{\substack{i \in [\![0, x_{max}]\!]\\
 			     j \in [\![0, y_{max}]\!]\\
 			     (x, y) \, not \, high \, of \, type \, type}}
-((h_{type}, t) \Rightarrow (h_{type}, t-1) \vee \neg(x, y, t-1, d_{green}))
+((h_{type}, t) \Rightarrow (h_{type}, t-1) \vee \neg(x, y, t, d_{type}))
 \end{equation}
 The double condition makes sure that tiles which have once sunk down can stay
 sunk down even if there are again low tiles of the respective type (e.g. after
@@ -388,6 +388,20 @@ type that have sunk down really stay sunk down :
 \end{equation}
 All those clauses are added to the formula thanks to the functions
 {\em getBigClauses} and {\em getHighElementsSinkingClauses}.
+
+
+\subsection{Evaluation}
+With our encoding we could solve levels of Hex-a-Hop up to the levels called
+"One Two One Two" and "Not a Knot". Solving the following levels would require
+to add new clauses (and maybe new variables) to take in account new situations
+and eventually new kind of tiles (there are a bunch of other ones that appear in
+higher levels) that aren't treated by our encoding. Nevertheless, finding a
+solution, for example for the "Not a Knot" level (32511 variables and 232331
+clauses for 63 steps) can already be very long with our method. One improvement
+that could be made is to transform the encoding so that, for a given number of
+steps $t_{max}$, a solution is found if there is a solution with a number of
+steps less or equal to $t_{max}$, either than just equal to $t_{max}$ : the
+encoding could then be done just once.
 
 
 \subsection{How to use the program}
