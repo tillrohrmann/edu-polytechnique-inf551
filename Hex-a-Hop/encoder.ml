@@ -381,7 +381,7 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
 
   (* For each time step, all the high tiles of a given type are sunk down if
      they already were in the previous step or if no low tile having the same
-     dynamic type was present at the previous step.
+     dynamic type is present at the current step.
    *)
   for t = 1 to timesteps do
     let typeHeightVar = encodeTypeHeightVar tileType t size timesteps in
