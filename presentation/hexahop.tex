@@ -28,8 +28,20 @@
 			\item Semantic: $v_{x,y}^{t} \equiv 1 \Leftrightarrow$ Player is at time step $t$ at position $(x,y)$
 		\end{itemize}
 	\end{block}
+
+	\pause
+
 	\begin{itemize}
-		\item $\forall t:$ Player has to be on exactly one tile
+		\item At each time step, the player has to be somewhere
+			  \begin{displaymath}
+			  \bigwedge \limits_t (\bigvee \limits_{x, y} v_{x,y}^{t})
+			  \end{displaymath}
+		\pause
+		\item But the player can't be at two positions at the same time
+			  \begin{displaymath}
+			  \bigwedge \limits_{\substack{t\\ {(x, y) \not= (x', y')}}}
+			  (\neg v_{x,y}^{t} \vee \neg v_{x',y'}^{t})
+			  \end{displaymath}
 	\end{itemize}
 \end{frame}
 
@@ -61,6 +73,7 @@
 		\begin{displaymath}
 			\text{Turquoise} \Rightarrow \text{Green} \Rightarrow \text{Destroyed}
 		\end{displaymath}
+		\pause
 		\item Dynamic type function
 		\begin{displaymath}
 			dT(\pmb x,t+1)=
@@ -70,6 +83,8 @@
 				\text{Green} & v_{\pmb x}^{t} \equiv 1 \wedge dT(\pmb x,t)=\text{Turquoise}
 			\end{cases}
 		\end{displaymath}
+		\pause
+		\item Allows to define behavioral clauses easily
 	\end{itemize}
 \end{frame}
 
@@ -85,9 +100,35 @@
 		\begin{itemize}
 			\item All green tiles have to be destroyed
 			\begin{displaymath}
-				\bigwedge_{\pmb x} \neg (dT(\pmb x, T) = \text{Green})
+				\bigwedge_{\pmb x} \neg (dT(\pmb x, t_{max}) = \text{Green})
 			\end{displaymath}
-			\item $T$ last timestep
+			\item $t_{max}$ last timestep
+		\end{itemize}
+	\end{block}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Advanced tile types}
+	\begin{block}{Trampolines}
+		\begin{itemize}
+			\item Accessibility thanks to a sequel of jumps
+			\pause
+			\item Variable $trampoline_t$ indicating whether or not we used
+				  a trampoline at time step $t$
+		\end{itemize}
+	\end{block}
+
+	\pause
+
+	\begin{block}{High tiles}
+		\begin{itemize}
+			\item Variables $h_{green}^t$ and $h_{turquoise}^t$ indicating
+				  whether the high tiles of a given type have sunk down
+			\pause
+			\item Accessibility at time step $t$ depending on those
+				  variables
+			\pause
+			\item Special case to consider for trampolines
 		\end{itemize}
 	\end{block}
 \end{frame}
