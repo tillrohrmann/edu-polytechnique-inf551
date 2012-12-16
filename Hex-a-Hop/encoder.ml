@@ -398,49 +398,6 @@ let getHighElementsSinkingClauses elementType field size timesteps formula =
       done
     done
   done
-
-  (*
-  let rec getHighElementsSinkingClauses_aux smallElements =
-    match smallElements with
-        [] -> ()
-      | h::t ->
-          for ts = 0 to timesteps do
-            let clause = ref [-(encodeTypeHeightVar tileType ts size timesteps)]
-            in
-
-            for ts' = 0 to ts - 1 do
-              clause := (encodeVar h.(0) h.(1) ts' size) :: !clause
-            done;
-
-            formula := !clause :: !formula
-          done;
-
-          getHighElementsSinkingClauses_aux t;
-  in
-
-  let smallElements = findSmallElem elementType field size in
-  getHighElementsSinkingClauses_aux smallElements;
-
-  if (tileType = green_type)
-  then
-    List.iter
-      (fun pos ->
-         for ts = 1 to timesteps do
-           for ts' = 0 to ts - 1 do
-             let clause = ref [-(encodeTypeHeightVar tileType ts size timesteps)
-                               ; -(encodeVar pos.(0) pos.(1) ts' size)] in
-
-             for ts'' = 0 to ts - 1 do
-               if ts' <> ts''
-               then
-                 clause := (encodeVar pos.(0) pos.(1) ts'' size) :: !clause
-             done;
-
-             formula := !clause :: !formula
-           done
-         done)
-      (findSmallElem const_turquoise field size)
-   *)
 ;;
 
 (**
