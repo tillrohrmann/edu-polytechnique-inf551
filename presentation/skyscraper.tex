@@ -10,8 +10,9 @@
 	\end{block}
 	\begin{block}{Constraints}<2->
 		\begin{itemize}
+			\item No two skyscraper on one field
 			\item No two skyscraper with the same height in each row/column
-			\item Number of visible skyscrapers from the side
+			\item Number of visible skyscrapers seen from the side
 		\end{itemize}
 	\end{block}
 \end{frame}
@@ -35,7 +36,7 @@
 	\begin{itemize}
 		\item<2-> On every field there has to be at least one skyscraper
 		\begin{displaymath}
-			\bigwedge_{x,y} \bigvee_{h} v_{x,y}^h
+			\bigwedge_{x,y} \left( \bigvee_{h} v_{x,y}^h\right)
 		\end{displaymath}
 	\end{itemize}
 \end{frame}
@@ -61,15 +62,15 @@
 		\begin{displaymath}
 			maxS_{d}(\pmb x) = 
 			\begin{cases}
-				height(\pmb x)+1 & height(\pmb x) \ge mS_{d}(\pmb x + \pmb e_{d})\\
+				height(\pmb x) & height(\pmb x) > maxS_{d}(\pmb x + \pmb e_{d})\\
 				maxS_{d}(\pmb x + \pmb e_{d}) &\text{if not}
 			\end{cases}
 		\end{displaymath}
 		\begin{displaymath}
 			numS_{d}(\pmb x) =
 			\begin{cases}
-				numS_{d}(\pmb x - \pmb e_{d}) + 1 & height(\pmb x) \ge maxS_{d}(\pmb x)\\
-				numS_{d}(\pmb x - \pmb e_{d}) &\text{if not}
+				numS_{d}(\pmb x + \pmb e_{d}) + 1 & height(\pmb x) > maxS_{d}(\pmb x + \pmb e_{d})\\
+				numS_{d}(\pmb x + \pmb e_{d}) &\text{if not}
 			\end{cases}
 		\end{displaymath}
 		\item $d\in \{North, East, South, West\}$
